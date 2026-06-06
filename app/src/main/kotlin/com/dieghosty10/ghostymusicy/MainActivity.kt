@@ -131,7 +131,7 @@ class MainActivity : ComponentActivity() {
                                                 selected  = selected,
                                                 onClick   = {
                                                     navController.navigate(item.route) {
-                                                        popUpTo(Routes.HOME) { saveState = true }
+                                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
                                                         launchSingleTop = true
                                                         restoreState    = true
                                                     }
@@ -162,7 +162,7 @@ class MainActivity : ComponentActivity() {
                             navController = navController,
                             startDestination = startDest,
                             hazeState     = hazeState,
-                            modifier      = Modifier.padding(innerPadding),
+                            modifier      = Modifier,
                         )
                     }
                 }
