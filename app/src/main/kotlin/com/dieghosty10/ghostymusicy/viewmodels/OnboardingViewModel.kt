@@ -33,14 +33,18 @@ class OnboardingViewModel @Inject constructor() : ViewModel() {
             _isLoading.value = true
             try {
                 // Fetch very famous artists directly to ensure high quality initial list
-                val famousQueries = listOf("Bad Bunny", "Taylor Swift", "The Weeknd", "Feid", "Karol G", "Drake", "Dua Lipa", "Shakira", "Bruno Mars", "Billie Eilish", "J Balvin", "Rauw Alejandro", "Ariana Grande", "Coldplay", "Eminem", "Imagine Dragons", "Ed Sheeran", "Rosalía", "Quevedo")
-                val artists = mutableListOf<ArtistItem>()
+                val allQueries = listOf("Bad Bunny", "Taylor Swift", "The Weeknd", "Feid", "Karol G", "Drake", "Dua Lipa", "Shakira", "Bruno Mars", "Billie Eilish", "J Balvin", "Rauw Alejandro", "Ariana Grande", "Coldplay", "Eminem", "Imagine Dragons", "Ed Sheeran", "Rosalía", "Quevedo")
+                val famousQueries = allQueries.shuffled().take(8)
                 
-                // Fetch a few concurrently to be fast, but we can just do sequentially or chunks
-                famousQueries.chunked(4).forEach { chunk ->
-                    chunk.forEach { query ->
-                        val result = YouTube.search(query, YouTube.SearchFilter.FILTER_ARTIST).getOrNull()
-                        result?.items?.filterIsInstance<ArtistItem>()?.firstOrNull()?.let { artists.add(it) }
+                // Fetch concurrently to be fast
+                val artists = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    kotlinx.coroutines.coroutineScope {
+                        famousQueries.map { query ->
+                            kotlinx.coroutines.async {
+                                val result = YouTube.search(query, YouTube.SearchFilter.FILTER_ARTIST).getOrNull()
+                                result?.items?.filterIsInstance<ArtistItem>()?.firstOrNull()
+                            }
+                        }.mapNotNull { it.await() }
                     }
                 }
                 

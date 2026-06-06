@@ -105,22 +105,28 @@ class PlayerConnection(
 
     fun playQueue(queue: Queue) {
         scope.launch {
-            val preloaded = queue.preloadItem
-            if (preloaded != null) {
-                // Reproducir inmediatamente
-                player.setMediaItem(preloaded.toMediaItem())
-                player.prepare()
-                player.play()
-                // Luego cargar el resto y añadirlo
-                val status = queue.getInitialStatus()
-                // Evitar duplicar el preloadItem
-                val itemsToAdd = status.items.filter { it.mediaId != preloaded.id }
-                player.addMediaItems(1, itemsToAdd)
-            } else {
-                val status = queue.getInitialStatus()
-                player.setMediaItems(status.items, status.mediaItemIndex, 0)
-                player.prepare()
-                player.play()
+            try {
+                val preloaded = queue.preloadItem
+                if (preloaded != null) {
+                    // Reproducir inmediatamente
+                    player.setMediaItem(preloaded.toMediaItem())
+                    player.prepare()
+                    player.play()
+                    // Luego cargar el resto y añadirlo
+                    val status = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { queue.getInitialStatus() }
+                    // Evitar duplicar el preloadItem
+                    val itemsToAdd = status.items.filter { it.mediaId != preloaded.id }
+                    player.addMediaItems(1, itemsToAdd)
+                } else {
+                    val status = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { queue.getInitialStatus() }
+                    player.setMediaItems(status.items, status.mediaItemIndex, 0)
+                    player.prepare()
+                    player.play()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // Error de red o similar, no colapsar la app
+                android.widget.Toast.makeText(service.applicationContext, "No se pudo cargar la cola. Verifica tu conexión.", android.widget.Toast.LENGTH_SHORT).show()
             }
         }
     }

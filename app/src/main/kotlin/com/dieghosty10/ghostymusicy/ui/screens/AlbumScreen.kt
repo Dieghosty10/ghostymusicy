@@ -142,6 +142,7 @@ fun AlbumScreen(
                                         false
                                     )
                                 }
+                                Toast.makeText(context, "Descargando álbum...", Toast.LENGTH_SHORT).show()
                             },
                             onPlay = { startIndex ->
                                 val song = page.songs.getOrNull(startIndex)
