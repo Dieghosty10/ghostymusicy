@@ -1,0 +1,478 @@
+package com.dieghosty10.ghostymusicy.ui.screens
+
+import android.text.format.DateUtils
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.graphics.drawable.toBitmap
+import androidx.media3.common.Player
+import androidx.palette.graphics.Palette
+import coil3.asDrawable
+import coil3.compose.AsyncImage
+import com.dieghosty10.ghostymusicy.LocalPlayerConnection
+import kotlinx.coroutines.delay
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.dieghosty10.ghostymusicy.viewmodels.LyricsViewModel
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlayerScreen() {
+    val playerConnection = LocalPlayerConnection.current ?: return
+    val mediaMetadata by playerConnection.mediaMetadata.collectAsState(initial = null)
+    val isPlaying by playerConnection.isPlaying.collectAsState()
+    val shuffleEnabled by playerConnection.shuffleModeEnabled.collectAsState()
+    val repeatMode by playerConnection.repeatMode.collectAsState()
+
+    var currentPosition by remember { mutableStateOf(0L) }
+    var duration by remember { mutableStateOf(0L) }
+    var dominantColor by remember { mutableStateOf<Color?>(null) }
+    var isLiked by remember { mutableStateOf(false) }
+
+    var showLyrics by remember { mutableStateOf(false) }
+    val lyricsViewModel = hiltViewModel<LyricsViewModel>()
+    val lyrics by lyricsViewModel.lyrics.collectAsState()
+    val isLyricsLoading by lyricsViewModel.isLoading.collectAsState()
+
+    val coverScale by animateFloatAsState(
+        targetValue = if (isPlaying) 1f else 0.88f,
+        animationSpec = tween(durationMillis = 600)
+    )
+
+    // Animación infinita de pulso cuando reproduce
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+
+    LaunchedEffect(isPlaying) {
+        while (isPlaying) {
+            currentPosition = playerConnection.player.currentPosition
+            duration = playerConnection.player.duration.coerceAtLeast(0)
+            delay(500)
+        }
+        // También actualizar cuando se pausa (para mostrar posición correcta)
+        currentPosition = playerConnection.player.currentPosition
+        duration = playerConnection.player.duration.coerceAtLeast(0)
+    }
+
+    val bgGradient = Brush.verticalGradient(
+        colors = listOf(
+            dominantColor?.copy(alpha = 0.7f) ?: Color(0xFF18181B),
+            Color(0xFF09090B),
+            Color(0xFF09090B)
+        )
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(bgGradient)
+    ) {
+        // Halo de color detrás de la portada cuando reproduce
+        if (isPlaying && dominantColor != null) {
+            Box(
+                modifier = Modifier
+                    .size(320.dp)
+                    .align(Alignment.TopCenter)
+                    .offset(y = 80.dp)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                dominantColor!!.copy(alpha = pulseAlpha),
+                                Color.Transparent
+                            )
+                        ),
+                        shape = CircleShape
+                    )
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 12.dp,
+                    bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 16.dp,
+                    start = 28.dp,
+                    end = 28.dp
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Fuente de la cola
+            Text(
+                text = "Reproduciendo",
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White.copy(alpha = 0.6f),
+                letterSpacing = 2.sp
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Portada inmersiva con sombra de color
+            val context = LocalContext.current
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .graphicsLayer {
+                        scaleX = coverScale
+                        scaleY = coverScale
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                // Sombra coloreada
+                if (dominantColor != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .shadow(
+                                elevation = if (isPlaying) 48.dp else 24.dp,
+                                shape = RoundedCornerShape(32.dp),
+                                ambientColor = dominantColor!!,
+                                spotColor = dominantColor!!
+                            )
+                    )
+                }
+                AnimatedContent(
+                    targetState = mediaMetadata?.thumbnailUrl,
+                    transitionSpec = { fadeIn(tween(400)) togetherWith fadeOut(tween(400)) },
+                    label = "cover"
+                ) { thumbnailUrl ->
+                    AsyncImage(
+                        model = thumbnailUrl ?: "https://via.placeholder.com/500",
+                        contentDescription = "Cover Art",
+                        contentScale = ContentScale.Crop,
+                        onSuccess = { state ->
+                            val drawable = state.result.image.asDrawable(context.resources)
+                            Palette.from(drawable.toBitmap()).generate { palette ->
+                                dominantColor = palette?.dominantSwatch?.rgb?.let { Color(it) }
+                                    ?: palette?.mutedSwatch?.rgb?.let { Color(it) }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(32.dp))
+                            .background(Color(0xFF27272A))
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            // Título + artista + like
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    AnimatedContent(
+                        targetState = mediaMetadata?.title ?: "Sin reproducción",
+                        transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
+                        label = "title"
+                    ) { title ->
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = mediaMetadata?.artists?.joinToString { it.name } ?: "Selecciona una canción",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = dominantColor?.copy(alpha = 0.9f) ?: MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                // Botón de Like
+                IconButton(
+                    onClick = {
+                        playerConnection.toggleLike()
+                        isLiked = !isLiked
+                    },
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isLiked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                        contentDescription = "Me gusta",
+                        tint = if (isLiked) Color(0xFFEF4444) else Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Slider de progreso
+            val progress = if (duration > 0) (currentPosition.toFloat() / duration.toFloat()) else 0f
+            Slider(
+                value = progress,
+                onValueChange = { value ->
+                    val newPos = (value * duration).toLong()
+                    playerConnection.player.seekTo(newPos)
+                    currentPosition = newPos
+                },
+                colors = SliderDefaults.colors(
+                    thumbColor = Color.White,
+                    activeTrackColor = dominantColor ?: MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = Color.White.copy(alpha = 0.2f)
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    DateUtils.formatElapsedTime(currentPosition / 1000),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.6f)
+                )
+                Text(
+                    DateUtils.formatElapsedTime(duration / 1000),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.6f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Controles principales
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Shuffle
+                IconButton(
+                    onClick = {
+                        playerConnection.player.shuffleModeEnabled = !shuffleEnabled
+                    },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.Shuffle,
+                        contentDescription = "Aleatorio",
+                        tint = if (shuffleEnabled) (dominantColor ?: MaterialTheme.colorScheme.primary) else Color.White.copy(alpha = 0.5f),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                // Anterior
+                IconButton(
+                    onClick = { playerConnection.seekToPrevious() },
+                    modifier = Modifier.size(52.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.SkipPrevious,
+                        contentDescription = "Anterior",
+                        tint = Color.White,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+
+                // Play/Pause (botón grande)
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(
+                            dominantColor?.copy(alpha = 0.9f) ?: MaterialTheme.colorScheme.primary
+                        )
+                        .clickable {
+                            if (isPlaying) playerConnection.player.pause()
+                            else playerConnection.player.play()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                        contentDescription = "Play/Pause",
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+
+                // Siguiente
+                IconButton(
+                    onClick = { playerConnection.seekToNext() },
+                    modifier = Modifier.size(52.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.SkipNext,
+                        contentDescription = "Siguiente",
+                        tint = Color.White,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+
+                // Repeat
+                IconButton(
+                    onClick = {
+                        val next = when (repeatMode) {
+                            Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                            Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                            else -> Player.REPEAT_MODE_OFF
+                        }
+                        playerConnection.player.repeatMode = next
+                    },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    val (icon, tint) = when (repeatMode) {
+                        Player.REPEAT_MODE_ONE -> Icons.Rounded.RepeatOne to (dominantColor ?: MaterialTheme.colorScheme.primary)
+                        Player.REPEAT_MODE_ALL -> Icons.Rounded.Repeat to (dominantColor ?: MaterialTheme.colorScheme.primary)
+                        else -> Icons.Rounded.Repeat to Color.White.copy(alpha = 0.5f)
+                    }
+                    Icon(
+                        icon,
+                        contentDescription = "Repetir",
+                        tint = tint,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Barra de opciones extra
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Queue
+                IconButton(onClick = {}) {
+                    Icon(
+                        Icons.Rounded.QueueMusic,
+                        contentDescription = "Cola",
+                        tint = Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                // Letras
+                IconButton(onClick = { 
+                    showLyrics = true
+                    mediaMetadata?.id?.let { videoId ->
+                        lyricsViewModel.fetchLyrics(videoId)
+                    }
+                }) {
+                    Icon(
+                        Icons.Rounded.Lyrics,
+                        contentDescription = "Letra",
+                        tint = Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                // Compartir
+                val context = LocalContext.current
+                IconButton(onClick = {
+                    mediaMetadata?.id?.let { videoId ->
+                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=$videoId")
+                        }
+                        context.startActivity(android.content.Intent.createChooser(intent, "Compartir canción"))
+                    }
+                }) {
+                    Icon(
+                        Icons.Rounded.Share,
+                        contentDescription = "Compartir",
+                        tint = Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                // Más opciones
+                IconButton(onClick = {}) {
+                    Icon(
+                        Icons.Rounded.MoreHoriz,
+                        contentDescription = "Más",
+                        tint = Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+        }
+    }
+
+    if (showLyrics) {
+        ModalBottomSheet(
+            onDismissRequest = { showLyrics = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            scrimColor = Color.Black.copy(alpha = 0.5f)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Letra",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(16.dp))
+                if (isLyricsLoading) {
+                    Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    Text(
+                        text = lyrics ?: "No disponible",
+                        style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 28.sp),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState())
+                            .padding(bottom = 32.dp)
+                    )
+                }
+            }
+        }
+    }
+}

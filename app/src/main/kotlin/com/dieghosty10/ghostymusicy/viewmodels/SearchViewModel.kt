@@ -1,0 +1,124 @@
+package com.dieghosty10.ghostymusicy.viewmodels
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.dieghosty10.ghostymusicy.db.MusicDatabase
+import com.dieghosty10.ghostymusicy.innertube.YouTube
+import com.dieghosty10.ghostymusicy.innertube.pages.SearchResult
+import com.dieghosty10.ghostymusicy.innertube.models.SearchSuggestions
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+enum class SearchTab(val label: String, val filter: YouTube.SearchFilter) {
+    SONGS   ("Canciones", YouTube.SearchFilter.FILTER_SONG),
+    ARTISTS ("Artistas",  YouTube.SearchFilter.FILTER_ARTIST),
+    ALBUMS  ("Álbumes",   YouTube.SearchFilter.FILTER_ALBUM),
+    VIDEOS  ("Videos",    YouTube.SearchFilter.FILTER_VIDEO),
+}
+
+@HiltViewModel
+class SearchViewModel @Inject constructor(
+    private val database: MusicDatabase
+) : ViewModel() {
+
+    private val _query = MutableStateFlow("")
+    val query: StateFlow<String> = _query.asStateFlow()
+
+    private val _suggestions = MutableStateFlow<SearchSuggestions?>(null)
+    val suggestions: StateFlow<SearchSuggestions?> = _suggestions.asStateFlow()
+
+    // Resultados por tab
+    private val _results = MutableStateFlow<Map<SearchTab, SearchResult?>>(emptyMap())
+    val results: StateFlow<Map<SearchTab, SearchResult?>> = _results.asStateFlow()
+
+    // Tab activo
+    private val _activeTab = MutableStateFlow(SearchTab.SONGS)
+    val activeTab: StateFlow<SearchTab> = _activeTab.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    // Historial (en memoria, máximo 10)
+    private val _recentSearches = MutableStateFlow<List<String>>(emptyList())
+    val recentSearches: StateFlow<List<String>> = _recentSearches.asStateFlow()
+
+    private var suggestJob: Job? = null
+    private var searchJob: Job? = null
+
+    fun setActiveTab(tab: SearchTab) {
+        _activeTab.value = tab
+        // Si ya tenemos query pero no resultados para este tab, buscar
+        val q = _query.value
+        if (q.isNotBlank() && _results.value[tab] == null) {
+            loadTab(tab, q)
+        }
+    }
+
+    fun updateQuery(newQuery: String) {
+        _query.value = newQuery
+        suggestJob?.cancel()
+        if (newQuery.isBlank()) {
+            _suggestions.value = null
+            _results.value = emptyMap()
+            return
+        }
+        suggestJob = viewModelScope.launch {
+            delay(220)
+            YouTube.searchSuggestions(newQuery).onSuccess { _suggestions.value = it }
+        }
+    }
+
+    fun performSearch(queryText: String) {
+        if (queryText.isBlank()) return
+        suggestJob?.cancel()
+        searchJob?.cancel()
+
+        _query.value = queryText
+        _suggestions.value = null
+        _results.value = emptyMap()
+        addToHistory(queryText)
+
+        // Cargar el tab activo primero, los demás en paralelo
+        searchJob = viewModelScope.launch {
+            _isLoading.value = true
+            // Cargar tab activo
+            loadTabSuspend(_activeTab.value, queryText)
+            _isLoading.value = false
+            // Cargar los demás tabs en background
+            SearchTab.entries.filter { it != _activeTab.value }.forEach { tab ->
+                launch { loadTabSuspend(tab, queryText) }
+            }
+        }
+    }
+
+    private fun loadTab(tab: SearchTab, q: String) {
+        viewModelScope.launch { loadTabSuspend(tab, q) }
+    }
+
+    private suspend fun loadTabSuspend(tab: SearchTab, q: String) {
+        YouTube.search(q, tab.filter).onSuccess { result ->
+            _results.value = _results.value + (tab to result)
+        }
+    }
+
+    private fun addToHistory(q: String) {
+        val list = _recentSearches.value.toMutableList()
+        list.remove(q)
+        list.add(0, q)
+        _recentSearches.value = list.take(10)
+    }
+
+    fun removeRecentSearch(q: String) {
+        _recentSearches.value = _recentSearches.value.filter { it != q }
+    }
+
+    fun clearRecentSearches() {
+        _recentSearches.value = emptyList()
+    }
+}
