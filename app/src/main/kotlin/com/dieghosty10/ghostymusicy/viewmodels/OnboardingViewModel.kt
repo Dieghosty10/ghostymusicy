@@ -38,14 +38,14 @@ class OnboardingViewModel @Inject constructor() : ViewModel() {
                 
                 // Fetch concurrently to be fast
                 val artists = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    kotlinx.coroutines.coroutineScope {
-                        famousQueries.map { query ->
-                            kotlinx.coroutines.async {
-                                val result = YouTube.search(query, YouTube.SearchFilter.FILTER_ARTIST).getOrNull()
-                                result?.items?.filterIsInstance<ArtistItem>()?.firstOrNull()
-                            }
-                        }.mapNotNull { it.await() }
+                    val deferredList = mutableListOf<kotlinx.coroutines.Deferred<ArtistItem?>>()
+                    for (query in famousQueries) {
+                        deferredList.add(kotlinx.coroutines.async {
+                            val result = YouTube.search(query, YouTube.SearchFilter.FILTER_ARTIST).getOrNull()
+                            result?.items?.filterIsInstance<ArtistItem>()?.firstOrNull()
+                        })
                     }
+                    deferredList.mapNotNull { it.await() }
                 }
                 
                 _suggestedArtists.value = artists.distinctBy { it.id }.shuffled()
