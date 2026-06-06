@@ -23,6 +23,8 @@ import com.dieghosty10.ghostymusicy.db.MusicDatabase
 import com.dieghosty10.ghostymusicy.extensions.getCurrentQueueIndex
 import com.dieghosty10.ghostymusicy.extensions.getQueueWindows
 import com.dieghosty10.ghostymusicy.extensions.metadata
+import com.dieghosty10.ghostymusicy.extensions.toMediaItem
+import kotlinx.coroutines.launch
 import com.dieghosty10.ghostymusicy.playback.MusicService.MusicBinder
 import com.dieghosty10.ghostymusicy.playback.queues.Queue
 import com.dieghosty10.ghostymusicy.utils.reportException
@@ -39,7 +41,7 @@ class PlayerConnection(
     context: Context,
     binder: MusicBinder,
     val database: MusicDatabase,
-    scope: CoroutineScope,
+    val scope: CoroutineScope,
 ) : Player.Listener {
     val service = binder.service
     val player = service.player
@@ -102,7 +104,25 @@ class PlayerConnection(
     }
 
     fun playQueue(queue: Queue) {
-        service.playQueue(queue)
+        scope.launch {
+            val preloaded = queue.preloadItem
+            if (preloaded != null) {
+                // Reproducir inmediatamente
+                player.setMediaItem(preloaded.toMediaItem())
+                player.prepare()
+                player.play()
+                // Luego cargar el resto y añadirlo
+                val status = queue.getInitialStatus()
+                // Evitar duplicar el preloadItem
+                val itemsToAdd = status.items.filter { it.mediaId != preloaded.id }
+                player.addMediaItems(1, itemsToAdd)
+            } else {
+                val status = queue.getInitialStatus()
+                player.setMediaItems(status.items, status.mediaItemIndex, 0)
+                player.prepare()
+                player.play()
+            }
+        }
     }
 
     fun startRadioSeamlessly() {

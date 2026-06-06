@@ -9,7 +9,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -23,6 +26,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.widget.Toast
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
@@ -87,6 +96,8 @@ fun AlbumScreen(
                             playerConnection?.playQueue(
                                 YouTubeQueue.playlist(
                                     playlistId = page.album.playlistId,
+                                    videoId = page.songs.firstOrNull()?.id,
+                                    preloadItem = page.songs.firstOrNull()?.toMediaMetadata(),
                                     startIndex = 0
                                 )
                             )
@@ -101,6 +112,8 @@ fun AlbumScreen(
                                     playerConnection?.playQueue(
                                         YouTubeQueue.playlist(
                                             playlistId = page.album.playlistId,
+                                            videoId = song.id,
+                                            preloadItem = song.toMediaMetadata(),
                                             startIndex = index
                                         )
                                     )
@@ -147,6 +160,10 @@ fun AlbumScreen(
 
 @Composable
 fun AlbumHeader(page: com.dieghosty10.ghostymusicy.innertube.pages.AlbumPage, onPlay: () -> Unit) {
+    val context = LocalContext.current
+    val playerConnection = LocalPlayerConnection.current
+    val totalDurationMillis = page.songs.sumOf { (it.duration ?: 0).toLong() * 1000L }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -172,7 +189,7 @@ fun AlbumHeader(page: com.dieghosty10.ghostymusicy.innertube.pages.AlbumPage, on
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "${page.album.artists?.joinToString { it.name } ?: "Varios Artistas"} • ${page.album.year ?: ""} • ${page.songs.size} canciones",
+            text = "${page.album.artists?.joinToString { it.name } ?: "Varios Artistas"} • ${page.album.year ?: ""} • ${page.songs.size} canciones • ${makeTimeString(totalDurationMillis)}",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -185,6 +202,82 @@ fun AlbumHeader(page: com.dieghosty10.ghostymusicy.innertube.pages.AlbumPage, on
             Icon(Icons.Rounded.PlayArrow, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             Text("Reproducir", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            // Guardar
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { /* Guardar */ }
+                    .padding(12.dp)
+            ) {
+                Icon(Icons.Rounded.FavoriteBorder, contentDescription = "Guardar", modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.onSurface)
+                Spacer(Modifier.height(4.dp))
+                Text("Guardar", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+            }
+
+            // Aleatorio
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable {
+                        playerConnection?.player?.shuffleModeEnabled = true
+                        onPlay()
+                    }
+                    .padding(12.dp)
+            ) {
+                Icon(Icons.Rounded.Shuffle, contentDescription = "Aleatorio", modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.onSurface)
+                Spacer(Modifier.height(4.dp))
+                Text("Aleatorio", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+            }
+
+            // Descargar
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable {
+                        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                        val activeNetwork = connectivityManager.activeNetwork
+                        val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
+                        val isWifi = capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+
+                        if (!isWifi) {
+                            Toast.makeText(context, "Descargando con datos móviles", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Descargando álbum...", Toast.LENGTH_SHORT).show()
+                        }
+
+                        page.songs.forEach { song ->
+                            val vId = song.id
+                            val title = song.title
+                            val downloadRequest = androidx.media3.exoplayer.offline.DownloadRequest
+                                .Builder(vId, vId.toUri())
+                                .setCustomCacheKey(vId)
+                                .setData(title.toByteArray())
+                                .build()
+                            androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
+                                context,
+                                com.dieghosty10.ghostymusicy.playback.ExoDownloadService::class.java,
+                                downloadRequest,
+                                false
+                            )
+                        }
+                    }
+                    .padding(12.dp)
+            ) {
+                Icon(Icons.Rounded.Download, contentDescription = "Descargar", modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.onSurface)
+                Spacer(Modifier.height(4.dp))
+                Text("Descargar", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+            }
         }
     }
 }

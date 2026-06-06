@@ -1,5 +1,6 @@
 package com.dieghosty10.ghostymusicy.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,17 +11,25 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -85,17 +94,36 @@ fun ArtistScreen(
                     )
                 ) {
                     item {
-                        ArtistHeader(page) {
-                            // Reproducir la primera lista de canciones disponible (generalmente "Canciones")
-                            val topSongs = page.sections.firstOrNull { it.items.any { item -> item is SongItem } }?.items?.filterIsInstance<SongItem>()
-                            if (!topSongs.isNullOrEmpty()) {
-                                playerConnection?.playQueue(
-                                    YouTubeQueue.radio(
-                                        topSongs.first().toMediaMetadata()
-                                    )
-                                )
+                        ArtistHeader(
+                            page = page,
+                            onRadio = {
+                                val radioEndpoint = page.artist.radioEndpoint
+                                if (radioEndpoint != null) {
+                                    playerConnection?.playQueue(YouTubeQueue(radioEndpoint))
+                                } else {
+                                    val topSongs = page.sections.flatMap { it.items }.filterIsInstance<SongItem>()
+                                    if (topSongs.isNotEmpty()) {
+                                        playerConnection?.playQueue(
+                                            YouTubeQueue.radio(topSongs.first().toMediaMetadata())
+                                        )
+                                    }
+                                }
+                            },
+                            onShuffle = {
+                                playerConnection?.player?.shuffleModeEnabled = true
+                                val shuffleEndpoint = page.artist.shuffleEndpoint
+                                if (shuffleEndpoint != null) {
+                                    playerConnection?.playQueue(YouTubeQueue(shuffleEndpoint))
+                                } else {
+                                    val topSongs = page.sections.flatMap { it.items }.filterIsInstance<SongItem>()
+                                    if (topSongs.isNotEmpty()) {
+                                        playerConnection?.playQueue(
+                                            YouTubeQueue.radio(topSongs.first().toMediaMetadata())
+                                        )
+                                    }
+                                }
                             }
-                        }
+                        )
                     }
 
                     page.sections.forEach { section ->
@@ -198,11 +226,18 @@ fun ArtistScreen(
 }
 
 @Composable
-fun ArtistHeader(page: com.dieghosty10.ghostymusicy.innertube.pages.ArtistPage, onPlay: () -> Unit) {
+fun ArtistHeader(
+    page: com.dieghosty10.ghostymusicy.innertube.pages.ArtistPage,
+    onRadio: () -> Unit,
+    onShuffle: () -> Unit
+) {
+    val totalSongs = page.sections.sumOf { it.items.filterIsInstance<SongItem>().size }
+    var isFollowing by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(20.dp),
+            .padding(horizontal = 20.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         AsyncImage(
@@ -210,27 +245,85 @@ fun ArtistHeader(page: com.dieghosty10.ghostymusicy.innertube.pages.ArtistPage, 
             contentDescription = page.artist.title,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(200.dp)
+                .size(180.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
         Text(
             text = page.artist.title,
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 2,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
         )
-        Spacer(Modifier.height(24.dp))
-        Button(
-            onClick = onPlay,
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        if (totalSongs > 0) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "$totalSongs canciones",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(Modifier.height(28.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Rounded.PlayArrow, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("Reproducir Radio", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            OutlinedButton(
+                onClick = { isFollowing = !isFollowing },
+                shape = CircleShape,
+                border = BorderStroke(
+                    1.dp,
+                    if (isFollowing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                ),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = if (isFollowing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                ),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+            ) {
+                Icon(
+                    imageVector = if (isFollowing) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = if (isFollowing) "Siguiendo" else "Seguir",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                )
+            }
+
+            Button(
+                onClick = onRadio,
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+            ) {
+                Icon(Icons.Rounded.Radio, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Radio", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold))
+            }
+
+            Button(
+                onClick = onShuffle,
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+            ) {
+                Icon(Icons.Rounded.Shuffle, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Aleatorio", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold))
+            }
         }
     }
 }

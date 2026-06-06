@@ -201,7 +201,20 @@ fun SearchScreen(
                     }
                 } else {
                     LazyColumn(contentPadding = PaddingValues(bottom = 130.dp, top = 4.dp)) {
-                        items(currentResults) { item ->
+                        val topArtist = currentResults.firstOrNull { it is ArtistItem } as? ArtistItem
+                        val showTopArtist = topArtist != null && activeTab != SearchTab.ARTISTS && activeTab != SearchTab.ALBUMS
+
+                        if (showTopArtist && topArtist != null) {
+                            item {
+                                TopArtistResultCard(item = topArtist) {
+                                    navController.navigate(Routes.Artist(topArtist.id))
+                                }
+                            }
+                        }
+
+                        val itemsList = if (showTopArtist) currentResults.filter { it != topArtist } else currentResults
+
+                        items(itemsList) { item ->
                             when (activeTab) {
                                 SearchTab.ARTISTS -> ArtistResultRow(item) {
                                     if (item is ArtistItem) navController.navigate(Routes.Artist(item.id))
@@ -381,3 +394,51 @@ fun SuggestionRow(text: String, onClick: () -> Unit, onFillQuery: () -> Unit) {
 // Compatibilidad con HomeScreen
 @Composable
 fun PremiumSearchResultItem(item: YTItem, onClick: () -> Unit) = SongResultRow(item, onClick)
+
+@Composable
+fun TopArtistResultCard(item: ArtistItem, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = item.thumbnail,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            )
+            Spacer(Modifier.width(16.dp))
+            Column {
+                Text(
+                    text = "Mejor Resultado",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Artista",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}

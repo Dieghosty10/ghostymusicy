@@ -50,6 +50,6 @@ class YouTubeQueue(
 
     companion object {
         fun radio(song: MediaMetadata) = YouTubeQueue(WatchEndpoint(videoId = song.id), song)
-        fun playlist(playlistId: String, startIndex: Int = 0) = YouTubeQueue(WatchEndpoint(playlistId = playlistId, index = startIndex))
+        fun playlist(playlistId: String, videoId: String? = null, startIndex: Int = 0, preloadItem: MediaMetadata? = null) = YouTubeQueue(WatchEndpoint(videoId = videoId, playlistId = playlistId, index = startIndex), preloadItem)
     }
 }

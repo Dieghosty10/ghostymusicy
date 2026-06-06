@@ -29,6 +29,9 @@ class HomeViewModel @Inject constructor(
     private val _heroArtist = MutableStateFlow<com.dieghosty10.ghostymusicy.innertube.pages.ArtistPage?>(null)
     val heroArtist: StateFlow<com.dieghosty10.ghostymusicy.innertube.pages.ArtistPage?> = _heroArtist.asStateFlow()
 
+    private val _newReleases = MutableStateFlow<HomePage.Section?>(null)
+    val newReleases: StateFlow<HomePage.Section?> = _newReleases.asStateFlow()
+
     // Historial de escucha para personalizar sugerencias en el inicio
     val recentEvents: StateFlow<List<EventWithSong>> =
         database.events()
@@ -43,6 +46,19 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             
+            launch {
+                try {
+                    val homeData = YouTube.home().getOrNull()
+                    val releases = homeData?.sections?.find {
+                        val t = it.title.lowercase()
+                        t.contains("lanzamiento") || t.contains("nuevo") || t.contains("release")
+                    }
+                    _newReleases.value = releases
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
             val customSections = mutableListOf<HomePage.Section>()
             // Leer favoritos
                 val favoritesStr = com.dieghosty10.ghostymusicy.utils.PreferenceStore.get(

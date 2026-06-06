@@ -54,6 +54,7 @@ fun HomeScreen(
     val isLoading    by viewModel.isLoading.collectAsState()
     val recentEvents by viewModel.recentEvents.collectAsState()
     val heroArtist   by viewModel.heroArtist.collectAsState()
+    val newReleases  by viewModel.newReleases.collectAsState()
     val playerConnection = LocalPlayerConnection.current
 
     var showStatsSheet by remember { mutableStateOf(false) }
@@ -171,6 +172,30 @@ fun HomeScreen(
                                     Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text("Reproducir mix", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── Nuevos Lanzamientos ────────────────────────────────────────────────
+            if (newReleases != null) {
+                item {
+                    SectionTitle(newReleases!!.title)
+                }
+                item {
+                    LazyRow(
+                        contentPadding        = PaddingValues(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        items(newReleases!!.items) { item ->
+                            PremiumYTItemCard(item) {
+                                when (item) {
+                                    is SongItem  -> playerConnection?.playQueue(YouTubeQueue.radio(item.toMediaMetadata()))
+                                    is AlbumItem -> navController.navigate(Routes.Album(item.browseId))
+                                    is ArtistItem -> navController.navigate(Routes.Artist(item.id))
+                                    else         -> {}
                                 }
                             }
                         }
