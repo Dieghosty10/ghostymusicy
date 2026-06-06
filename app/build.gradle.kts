@@ -34,7 +34,11 @@ val gitCommit = fetchGitCommitHash()
 
 android {
     namespace = "com.dieghosty10.ghostymusicy"
-    compileSdk = 36
+    compileSdk = 35
+
+    configurations.all {
+        exclude(group = "com.google.protobuf", module = "protobuf-javalite")
+    }
 
     defaultConfig {
         applicationId = "com.dieghosty10.ghostymusicy"
@@ -177,9 +181,7 @@ ksp {
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx") {
-        exclude(group = "com.google.firebase", module = "protolite-well-known-types")
-    }
+    implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation(libs.guava)
     implementation(libs.coroutines.guava)
