@@ -617,7 +617,6 @@ fun PlayerScreen(navController: androidx.navigation.NavHostController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 28.dp)
-                    .padding(bottom = 48.dp)
             ) {
                 Text(
                     text = "Cola de reproducción",
@@ -630,7 +629,8 @@ fun PlayerScreen(navController: androidx.navigation.NavHostController) {
                 )
                 
                 androidx.compose.foundation.lazy.LazyColumn(
-                    modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
+                    modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+                    contentPadding = PaddingValues(bottom = 90.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
                 ) {
                     items(queueItems.size) { index ->
                         val item = queueItems[index]
@@ -640,7 +640,12 @@ fun PlayerScreen(navController: androidx.navigation.NavHostController) {
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp)
                                 .clickable {
-                                    playerConnection.player.seekToDefaultPosition(index)
+                                    val windowIndex = (0 until playerConnection.player.currentTimeline.windowCount).firstOrNull {
+                                        val window = androidx.media3.common.Timeline.Window()
+                                        playerConnection.player.currentTimeline.getWindow(it, window)
+                                        window.mediaItem.mediaId == item.mediaId
+                                    } ?: index
+                                    playerConnection.player.seekToDefaultPosition(windowIndex)
                                     showQueue = false
                                 },
                             verticalAlignment = Alignment.CenterVertically

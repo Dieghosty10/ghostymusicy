@@ -9,7 +9,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Shuffle
@@ -17,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,10 +50,19 @@ fun AlbumScreen(
     navController: NavController,
     viewModel: AlbumViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val albumPage by viewModel.albumPage.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val isSaved by viewModel.isSaved.collectAsState()
+    val downloads by viewModel.downloadUtil.downloads.collectAsState()
     val playerConnection = LocalPlayerConnection.current
+
+    val isDownloaded = remember(albumPage, downloads) {
+        albumPage?.songs?.isNotEmpty() == true && albumPage!!.songs.all {
+            downloads[it.id]?.state == androidx.media3.exoplayer.offline.Download.STATE_COMPLETED
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -88,20 +100,61 @@ fun AlbumScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
                         top = padding.calculateTopPadding(),
-                        bottom = 120.dp
+                        bottom = 90.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                     )
                 ) {
                     item {
-                        AlbumHeader(page) {
-                            playerConnection?.playQueue(
-                                YouTubeQueue.playlist(
-                                    playlistId = page.album.playlistId,
-                                    videoId = page.songs.firstOrNull()?.id,
-                                    preloadItem = page.songs.firstOrNull()?.toMediaMetadata(),
-                                    startIndex = 0
+                        AlbumHeader(
+                            page = page,
+                            isSaved = isSaved,
+                            isDownloaded = isDownloaded,
+                            onSave = {
+                                viewModel.toggleSave()
+                                val msg = if (!isSaved) "Álbum Guardado" else "Álbum Eliminado"
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            },
+                            onDownload = {
+                                if (isDownloaded) return@AlbumHeader
+
+                                val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                                val activeNetwork = connectivityManager.activeNetwork
+                                val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
+                                val isWifi = capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+
+                                if (!isWifi) {
+                                    Toast.makeText(context, "Descargando con datos móviles", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "Descargando álbum...", Toast.LENGTH_SHORT).show()
+                                }
+
+                                page.songs.forEach { song ->
+                                    val vId = song.id
+                                    val title = song.title
+                                    val downloadRequest = androidx.media3.exoplayer.offline.DownloadRequest
+                                        .Builder(vId, vId.toUri())
+                                        .setCustomCacheKey(vId)
+                                        .setData(title.toByteArray())
+                                        .build()
+                                    androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
+                                        context,
+                                        com.dieghosty10.ghostymusicy.playback.ExoDownloadService::class.java,
+                                        downloadRequest,
+                                        false
+                                    )
+                                }
+                            },
+                            onPlay = { startIndex ->
+                                val song = page.songs.getOrNull(startIndex)
+                                playerConnection?.playQueue(
+                                    YouTubeQueue.playlist(
+                                        playlistId = page.album.playlistId,
+                                        videoId = song?.id,
+                                        preloadItem = song?.toMediaMetadata(),
+                                        startIndex = startIndex
+                                    )
                                 )
-                            )
-                        }
+                            }
+                        )
                     }
 
                     itemsIndexed(page.songs) { index, song ->
@@ -159,8 +212,14 @@ fun AlbumScreen(
 }
 
 @Composable
-fun AlbumHeader(page: com.dieghosty10.ghostymusicy.innertube.pages.AlbumPage, onPlay: () -> Unit) {
-    val context = LocalContext.current
+fun AlbumHeader(
+    page: com.dieghosty10.ghostymusicy.innertube.pages.AlbumPage,
+    isSaved: Boolean,
+    isDownloaded: Boolean,
+    onSave: () -> Unit,
+    onDownload: () -> Unit,
+    onPlay: (Int) -> Unit
+) {
     val playerConnection = LocalPlayerConnection.current
     val totalDurationMillis = page.songs.sumOf { (it.duration ?: 0).toLong() * 1000L }
 
@@ -195,7 +254,7 @@ fun AlbumHeader(page: com.dieghosty10.ghostymusicy.innertube.pages.AlbumPage, on
         )
         Spacer(Modifier.height(24.dp))
         Button(
-            onClick = onPlay,
+            onClick = { onPlay(0) },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
@@ -215,12 +274,21 @@ fun AlbumHeader(page: com.dieghosty10.ghostymusicy.innertube.pages.AlbumPage, on
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .clickable { /* Guardar */ }
+                    .clickable { onSave() }
                     .padding(12.dp)
             ) {
-                Icon(Icons.Rounded.FavoriteBorder, contentDescription = "Guardar", modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.onSurface)
+                Icon(
+                    imageVector = if (isSaved) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    contentDescription = "Guardar",
+                    modifier = Modifier.size(28.dp),
+                    tint = if (isSaved) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
                 Spacer(Modifier.height(4.dp))
-                Text("Guardar", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    text = if (isSaved) "Guardado" else "Guardar",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isSaved) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
             }
 
             // Aleatorio
@@ -230,7 +298,8 @@ fun AlbumHeader(page: com.dieghosty10.ghostymusicy.innertube.pages.AlbumPage, on
                     .clip(RoundedCornerShape(12.dp))
                     .clickable {
                         playerConnection?.player?.shuffleModeEnabled = true
-                        onPlay()
+                        val randomStartIndex = if (page.songs.size > 1) (0 until page.songs.size).random() else 0
+                        onPlay(randomStartIndex)
                     }
                     .padding(12.dp)
             ) {
@@ -244,39 +313,21 @@ fun AlbumHeader(page: com.dieghosty10.ghostymusicy.innertube.pages.AlbumPage, on
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .clickable {
-                        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-                        val activeNetwork = connectivityManager.activeNetwork
-                        val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
-                        val isWifi = capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
-
-                        if (!isWifi) {
-                            Toast.makeText(context, "Descargando con datos móviles", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(context, "Descargando álbum...", Toast.LENGTH_SHORT).show()
-                        }
-
-                        page.songs.forEach { song ->
-                            val vId = song.id
-                            val title = song.title
-                            val downloadRequest = androidx.media3.exoplayer.offline.DownloadRequest
-                                .Builder(vId, vId.toUri())
-                                .setCustomCacheKey(vId)
-                                .setData(title.toByteArray())
-                                .build()
-                            androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
-                                context,
-                                com.dieghosty10.ghostymusicy.playback.ExoDownloadService::class.java,
-                                downloadRequest,
-                                false
-                            )
-                        }
-                    }
+                    .clickable { onDownload() }
                     .padding(12.dp)
             ) {
-                Icon(Icons.Rounded.Download, contentDescription = "Descargar", modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.onSurface)
+                Icon(
+                    imageVector = if (isDownloaded) Icons.Rounded.Check else Icons.Rounded.Download,
+                    contentDescription = "Descargar",
+                    modifier = Modifier.size(28.dp),
+                    tint = if (isDownloaded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
                 Spacer(Modifier.height(4.dp))
-                Text("Descargar", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    text = if (isDownloaded) "Descargado" else "Descargar",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isDownloaded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }

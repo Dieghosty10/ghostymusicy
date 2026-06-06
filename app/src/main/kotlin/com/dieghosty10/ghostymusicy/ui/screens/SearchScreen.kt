@@ -200,7 +200,7 @@ fun SearchScreen(
                         }
                     }
                 } else {
-                    LazyColumn(contentPadding = PaddingValues(bottom = 130.dp, top = 4.dp)) {
+                    LazyColumn(contentPadding = PaddingValues(bottom = 90.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(), top = 4.dp)) {
                         val topArtist = currentResults.firstOrNull { it is ArtistItem } as? ArtistItem
                         val showTopArtist = topArtist != null && activeTab != SearchTab.ARTISTS && activeTab != SearchTab.ALBUMS
 
@@ -235,7 +235,7 @@ fun SearchScreen(
 
             // Estado inicial — historial + géneros
             else -> {
-                LazyColumn(contentPadding = PaddingValues(bottom = 130.dp)) {
+                LazyColumn(contentPadding = PaddingValues(bottom = 90.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
                     if (recentSearches.isNotEmpty()) {
                         item {
                             Row(

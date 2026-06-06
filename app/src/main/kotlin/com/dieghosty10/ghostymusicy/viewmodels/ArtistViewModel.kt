@@ -44,4 +44,11 @@ class ArtistViewModel @Inject constructor(
             _isLoading.value = false
         }
     }
+
+    private val _isFollowing = MutableStateFlow(false)
+    val isFollowing: StateFlow<Boolean> = _isFollowing.asStateFlow()
+
+    fun toggleFollow() {
+        _isFollowing.value = !_isFollowing.value
+    }
 }

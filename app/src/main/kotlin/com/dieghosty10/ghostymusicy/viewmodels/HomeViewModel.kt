@@ -13,6 +13,11 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.google.gson.GsonBuilder
+import com.dieghosty10.ghostymusicy.utils.YTItemAdapter
+import com.dieghosty10.ghostymusicy.innertube.models.YTItem
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -25,6 +30,14 @@ class HomeViewModel @Inject constructor(
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _isOffline = MutableStateFlow(false)
+    val isOffline: StateFlow<Boolean> = _isOffline.asStateFlow()
+
+    private val prefs = context.getSharedPreferences("home_cache", android.content.Context.MODE_PRIVATE)
+    private val gson = GsonBuilder()
+        .registerTypeAdapter(YTItem::class.java, YTItemAdapter())
+        .create()
 
     private val _heroArtist = MutableStateFlow<com.dieghosty10.ghostymusicy.innertube.pages.ArtistPage?>(null)
     val heroArtist: StateFlow<com.dieghosty10.ghostymusicy.innertube.pages.ArtistPage?> = _heroArtist.asStateFlow()
@@ -39,11 +52,32 @@ class HomeViewModel @Inject constructor(
             .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {
+        val cached = prefs.getString("home_page_cache", null)
+        if (cached != null) {
+            try {
+                _homePage.value = gson.fromJson(cached, HomePage::class.java)
+            } catch(e: Exception) { e.printStackTrace() }
+        }
         fetchHome()
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        val connectivityManager = context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
     fun fetchHome() {
         viewModelScope.launch {
+            if (!isNetworkAvailable()) {
+                _isOffline.value = true
+                if (_homePage.value == null) {
+                    _isLoading.value = false
+                }
+                return@launch
+            }
+            _isOffline.value = false
             _isLoading.value = true
             
             launch {
@@ -107,10 +141,14 @@ class HomeViewModel @Inject constructor(
                 }
 
             if (customSections.isNotEmpty()) {
-                _homePage.value = HomePage(sections = customSections, chips = null, continuation = null)
+                val page = HomePage(sections = customSections, chips = null, continuation = null)
+                _homePage.value = page
+                prefs.edit().putString("home_page_cache", gson.toJson(page)).apply()
             } else {
                 // Sin favoritos configurados → UI mostrará estado vacío
-                _homePage.value = null
+                if (_homePage.value == null) {
+                    _homePage.value = null
+                }
             }
             _isLoading.value = false
         }

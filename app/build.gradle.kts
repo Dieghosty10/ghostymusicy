@@ -174,6 +174,7 @@ ksp {
 }
 
 dependencies {
+    implementation("com.google.code.gson:gson:2.10.1")
     implementation(libs.guava)
     implementation(libs.coroutines.guava)
     implementation(libs.concurrent.futures)

@@ -18,6 +18,7 @@ object Routes {
     const val PLAYER   = "player"
     const val SETTINGS = "settings"
     const val LIBRARY  = "library"
+    const val DOWNLOADS = "downloads"
     
     fun Album(id: String) = "album/$id"
     fun Artist(id: String) = "artist/$id"

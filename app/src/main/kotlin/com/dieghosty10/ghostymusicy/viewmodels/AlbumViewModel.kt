@@ -12,9 +12,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.dieghosty10.ghostymusicy.playback.DownloadUtil
+
 @HiltViewModel
 class AlbumViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle
+    savedStateHandle: SavedStateHandle,
+    val downloadUtil: DownloadUtil
 ) : ViewModel() {
 
     private val albumId: String = checkNotNull(savedStateHandle["albumId"])
@@ -27,6 +30,13 @@ class AlbumViewModel @Inject constructor(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _isSaved = MutableStateFlow(false)
+    val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
+
+    fun toggleSave() {
+        _isSaved.value = !_isSaved.value
+    }
 
     init {
         fetchAlbum()

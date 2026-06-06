@@ -52,6 +52,7 @@ fun ArtistScreen(
     val artistPage by viewModel.artistPage.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val isFollowing by viewModel.isFollowing.collectAsState()
     val playerConnection = LocalPlayerConnection.current
 
     Scaffold(
@@ -90,12 +91,14 @@ fun ArtistScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
                         top = padding.calculateTopPadding(),
-                        bottom = 120.dp
+                        bottom = 90.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                     )
                 ) {
                     item {
                         ArtistHeader(
                             page = page,
+                            isFollowing = isFollowing,
+                            onFollow = { viewModel.toggleFollow() },
                             onRadio = {
                                 val radioEndpoint = page.artist.radioEndpoint
                                 if (radioEndpoint != null) {
@@ -127,92 +130,94 @@ fun ArtistScreen(
                     }
 
                     page.sections.forEach { section ->
-                        item {
-                            Text(
-                                text = section.title,
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier.padding(start = 20.dp, top = 24.dp, bottom = 8.dp)
-                            )
-                        }
-                        
-                        if (section.items.firstOrNull() is SongItem) {
-                            items(section.items.filterIsInstance<SongItem>()) { song ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            playerConnection?.playQueue(
-                                                YouTubeQueue.radio(song.toMediaMetadata())
-                                            )
-                                        }
-                                        .padding(horizontal = 20.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    AsyncImage(
-                                        model = song.thumbnail,
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .size(50.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                                    )
-                                    Spacer(Modifier.width(12.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = song.title,
-                                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            text = song.artists.joinToString { it.name },
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-                                }
-                            }
-                        } else if (section.items.firstOrNull() is AlbumItem) {
+                        if (section.items.isNotEmpty()) {
                             item {
-                                LazyRow(
-                                    contentPadding = PaddingValues(horizontal = 20.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    items(section.items.filterIsInstance<AlbumItem>()) { album ->
-                                        Column(
+                                Text(
+                                    text = section.title,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier.padding(start = 20.dp, top = 24.dp, bottom = 8.dp)
+                                )
+                            }
+                            
+                            if (section.items.firstOrNull() is SongItem) {
+                                items(section.items.filterIsInstance<SongItem>()) { song ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                playerConnection?.playQueue(
+                                                    YouTubeQueue.radio(song.toMediaMetadata())
+                                                )
+                                            }
+                                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        AsyncImage(
+                                            model = song.thumbnail,
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Crop,
                                             modifier = Modifier
-                                                .width(140.dp)
-                                                .clickable {
-                                                    navController.navigate(Routes.Album(album.browseId))
-                                                }
-                                        ) {
-                                            AsyncImage(
-                                                model = album.thumbnail,
-                                                contentDescription = null,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier
-                                                    .size(140.dp)
-                                                    .clip(RoundedCornerShape(12.dp))
-                                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                                            )
-                                            Spacer(Modifier.height(8.dp))
+                                                .size(50.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                        )
+                                        Spacer(Modifier.width(12.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = album.title,
-                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                text = song.title,
+                                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                                                 color = MaterialTheme.colorScheme.onSurface,
-                                                maxLines = 2,
+                                                maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
                                             Text(
-                                                text = album.year?.toString() ?: "",
+                                                text = song.artists.joinToString { it.name },
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
+                                        }
+                                    }
+                                }
+                            } else if (section.items.firstOrNull() is AlbumItem) {
+                                item {
+                                    LazyRow(
+                                        contentPadding = PaddingValues(horizontal = 20.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        items(section.items.filterIsInstance<AlbumItem>()) { album ->
+                                            Column(
+                                                modifier = Modifier
+                                                    .width(140.dp)
+                                                    .clickable {
+                                                        navController.navigate(Routes.Album(album.browseId))
+                                                    }
+                                            ) {
+                                                AsyncImage(
+                                                    model = album.thumbnail,
+                                                    contentDescription = null,
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier
+                                                        .size(140.dp)
+                                                        .clip(RoundedCornerShape(12.dp))
+                                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                                )
+                                                Spacer(Modifier.height(8.dp))
+                                                Text(
+                                                    text = album.title,
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    maxLines = 2,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    text = album.year?.toString() ?: "",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -228,11 +233,12 @@ fun ArtistScreen(
 @Composable
 fun ArtistHeader(
     page: com.dieghosty10.ghostymusicy.innertube.pages.ArtistPage,
+    isFollowing: Boolean,
+    onFollow: () -> Unit,
     onRadio: () -> Unit,
     onShuffle: () -> Unit
 ) {
     val totalSongs = page.sections.sumOf { it.items.filterIsInstance<SongItem>().size }
-    var isFollowing by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -274,7 +280,7 @@ fun ArtistHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedButton(
-                onClick = { isFollowing = !isFollowing },
+                onClick = onFollow,
                 shape = CircleShape,
                 border = BorderStroke(
                     1.dp,

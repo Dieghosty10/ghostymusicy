@@ -55,6 +55,7 @@ fun HomeScreen(
     val recentEvents by viewModel.recentEvents.collectAsState()
     val heroArtist   by viewModel.heroArtist.collectAsState()
     val newReleases  by viewModel.newReleases.collectAsState()
+    val isOffline    by viewModel.isOffline.collectAsState()
     val playerConnection = LocalPlayerConnection.current
 
     var showStatsSheet by remember { mutableStateOf(false) }
@@ -71,7 +72,7 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize().haze(hazeState),
             contentPadding = PaddingValues(
                 top    = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 8.dp,
-                bottom = 140.dp,
+                bottom = 90.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
             )
         ) {
             // ── Header ─────────────────────────────────────────────────────
@@ -203,8 +204,51 @@ fun HomeScreen(
                 }
             }
 
-            // ── Shimmer si carga ───────────────────────────────────────────
-            if (isLoading && homePage == null) {
+            // ── Modo Offline ───────────────────────────────────────────────
+            if (isOffline && homePage == null) {
+                item {
+                    Box(
+                        modifier = Modifier.fillParentMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.CloudOff,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(80.dp)
+                            )
+                            Spacer(Modifier.height(24.dp))
+                            Text(
+                                "Estás offline",
+                                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Conéctate a internet para explorar música, o escucha tus canciones guardadas.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(32.dp))
+                            Button(
+                                onClick = { navController.navigate(Routes.DOWNLOADS) },
+                                modifier = Modifier.fillMaxWidth(0.9f).height(56.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                shape = RoundedCornerShape(28.dp)
+                            ) {
+                                Icon(Icons.Rounded.DownloadDone, contentDescription = null, modifier = Modifier.size(24.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text("Ver Canciones Descargadas", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+                        }
+                    }
+                }
+            } else if (isLoading && homePage == null) {
                 items(3) { ShimmerSection() }
             } else {
 
