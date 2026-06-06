@@ -56,6 +56,8 @@ fun HomeScreen(
     val heroArtist   by viewModel.heroArtist.collectAsState()
     val playerConnection = LocalPlayerConnection.current
 
+    var showStatsSheet by remember { mutableStateOf(false) }
+
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     val greeting = when (hour) {
         in 5..11  -> "Buenos días"
@@ -85,6 +87,21 @@ fun HomeScreen(
                             Text(greeting,
                                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
                                 color = MaterialTheme.colorScheme.onBackground)
+                            Spacer(Modifier.height(4.dp))
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.clickable { showStatsSheet = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Rounded.Assessment, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Tus Estadísticas", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                }
+                            }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             IconButton(onClick = { navController.navigate("library") }) {
@@ -245,6 +262,16 @@ fun HomeScreen(
                 }
             }
         }
+
+        if (showStatsSheet) {
+            @OptIn(ExperimentalMaterial3Api::class)
+            ModalBottomSheet(
+                onDismissRequest = { showStatsSheet = false },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            ) {
+                StatsSheetContent(recentEvents = recentEvents)
+            }
+        }
     }
 }
 
@@ -359,6 +386,115 @@ fun PremiumYTItemCard(item: YTItem, onClick: () -> Unit) {
                 Text(item.title,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                     color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
+@Composable
+fun StatsSheetContent(recentEvents: List<EventWithSong>) {
+    val topSongs = remember(recentEvents) {
+        recentEvents.groupBy { it.song.song.id }
+            .map { it.value.first().song.song to it.value.size }
+            .sortedByDescending { it.second }
+            .take(5)
+    }
+
+    val topArtists = remember(recentEvents) {
+        recentEvents.flatMap { it.song.artists }
+            .groupBy { it.id }
+            .map { it.value.first() to it.value.size }
+            .sortedByDescending { it.second }
+            .take(5)
+    }
+
+    val maxSongPlays = topSongs.maxOfOrNull { it.second } ?: 1
+    val maxArtistPlays = topArtists.maxOfOrNull { it.second } ?: 1
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp)
+            .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            "Tu Mini-Wrapped",
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black),
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Lo que más has escuchado recientemente",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+        if (topSongs.isEmpty()) {
+            Text("No hay suficientes datos. ¡Escucha más música!", style = MaterialTheme.typography.bodyMedium)
+        } else {
+            Text("Canciones Top", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), modifier = Modifier.align(Alignment.Start))
+            Spacer(Modifier.height(12.dp))
+            topSongs.forEachIndexed { index, (song, count) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("${index + 1}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(24.dp))
+                    AsyncImage(
+                        model = song.thumbnailUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(song.title, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Spacer(Modifier.height(4.dp))
+                        LinearProgressIndicator(
+                            progress = { count.toFloat() / maxSongPlays.toFloat() },
+                            modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Text("$count reproducciones", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            Text("Artistas Top", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), modifier = Modifier.align(Alignment.Start))
+            Spacer(Modifier.height(12.dp))
+            topArtists.forEachIndexed { index, (artist, count) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("${index + 1}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(24.dp))
+                    AsyncImage(
+                        model = artist.thumbnailUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(40.dp).clip(CircleShape)
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(artist.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Spacer(Modifier.height(4.dp))
+                        LinearProgressIndicator(
+                            progress = { count.toFloat() / maxArtistPlays.toFloat() },
+                            modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
+                            color = MaterialTheme.colorScheme.secondary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Text("$count reproducciones", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }

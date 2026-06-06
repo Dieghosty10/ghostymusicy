@@ -43,7 +43,7 @@ fun MiniPlayer(
     var currentPosition by remember { mutableStateOf(0L) }
     var duration by remember { mutableStateOf(0L) }
     
-    var dominantColor by remember { mutableStateOf<Color?>(null) }
+    val dominantColor = com.dieghosty10.ghostymusicy.utils.rememberDominantColor(model = currentSong?.thumbnailUrl)
     val animatedColor by animateColorAsState(
         targetValue = dominantColor?.copy(alpha = 0.8f) ?: MaterialTheme.colorScheme.surfaceVariant,
         animationSpec = tween(1000, easing = LinearEasing)
@@ -79,10 +79,7 @@ fun MiniPlayer(
                     model = currentSong?.thumbnailUrl,
                     contentDescription = "Thumbnail",
                     onSuccess = { state ->
-                        val drawable = state.result.image.asDrawable(context.resources)
-                        Palette.from(drawable.toBitmap()).generate { palette ->
-                            dominantColor = palette?.dominantSwatch?.rgb?.let { Color(it) } ?: palette?.mutedSwatch?.rgb?.let { Color(it) }
-                        }
+                        // Palette is handled by rememberDominantColor
                     },
                     modifier = Modifier
                         .size(48.dp)

@@ -51,7 +51,7 @@ fun MainNavGraph(
             SearchScreen(navController = navController)
         }
         composable(Routes.PLAYER) {
-            PlayerScreen()
+            PlayerScreen(navController = navController)
         }
         composable(Routes.SETTINGS) {
             SettingsScreen()

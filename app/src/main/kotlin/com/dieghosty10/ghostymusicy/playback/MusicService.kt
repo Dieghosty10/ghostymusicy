@@ -241,6 +241,9 @@ class MusicService :
     lateinit var lyricsHelper: LyricsHelper
 
     @Inject
+    lateinit var downloadUtil: com.dieghosty10.ghostymusicy.playback.DownloadUtil
+
+    @Inject
     lateinit var syncUtils: SyncUtils
 
     @Inject
@@ -3740,62 +3743,16 @@ class MusicService :
         scrobbleManager?.onSongStop()
     }
     
-    // Auto-start recommendations when playback ends
+    // Smart Radio: Auto-start radio when playback ends
     if (!suppressAutoPlayback &&
         playbackState == Player.STATE_ENDED &&
-        dataStore.get(AutoLoadMoreKey, true) &&
+        dataStore.get(com.dieghosty10.ghostymusicy.constants.SmartRadioKey, true) &&
         player.repeatMode == REPEAT_MODE_OFF &&
         player.currentMediaItem != null
     ) {
-        scope.launch(SilentHandler) {
-            if (suppressAutoPlayback || player.playbackState == STATE_IDLE || player.mediaItemCount == 0) return@launch
-            val lastMediaMetadata = player.currentMetadata
-            val existingAutomix = automixItems.value
-            if (existingAutomix.isNotEmpty()) {
-                val filteredAutomix = existingAutomix.filter { it.mediaId != lastMediaMetadata?.id }
-                if (filteredAutomix.isNotEmpty()) {
-                    autoAddedMediaIds.clear()
-                    player.setMediaItems(filteredAutomix, 0, 0)
-                    player.prepare()
-                    player.play()
-                    filteredAutomix.forEach { autoAddedMediaIds.add(it.mediaId) }
-                }
-                clearAutomix()
-            } else {
-                if (lastMediaMetadata != null) {
-                    withContext(Dispatchers.IO) {
-                        YouTube.next(WatchEndpoint(videoId = lastMediaMetadata.id))
-                    }.onSuccess { nextResult ->
-                        if (suppressAutoPlayback || player.playbackState == STATE_IDLE || player.mediaItemCount == 0) return@onSuccess
-                        val hideExplicit = dataStore.get(HideExplicitKey, false)
-                        val hideVideo = dataStore.get(HideVideoKey, false)
-                        val radioItems = nextResult.items
-                            .map { it.toMediaItem() }
-                            .filter { it.mediaId != lastMediaMetadata.id }
-                            .filterExplicit(hideExplicit)
-                            .filterVideo(hideVideo)
-
-                        if (radioItems.isNotEmpty()) {
-                            autoAddedMediaIds.clear()
-                            player.setMediaItems(radioItems, 0, 0)
-                            player.prepare()
-                            player.play()
-                            radioItems.forEach { autoAddedMediaIds.add(it.mediaId) }
-
-                            withContext(Dispatchers.IO) {
-                                YouTube.next(WatchEndpoint(playlistId = nextResult.endpoint.playlistId))
-                            }.onSuccess { automixResult ->
-                                if (suppressAutoPlayback || player.playbackState == STATE_IDLE) return@onSuccess
-                                automixItems.value = automixResult.items
-                                    .map { it.toMediaItem() }
-                                    .filter { it.mediaId != lastMediaMetadata.id }
-                                    .filterExplicit(hideExplicit)
-                                    .filterVideo(hideVideo)
-                            }
-                        }
-                    }
-                }
-            }
+        val isAtEnd = player.currentMediaItemIndex == player.mediaItemCount - 1
+        if (isAtEnd) {
+            startRadioSeamlessly()
         }
     }
 

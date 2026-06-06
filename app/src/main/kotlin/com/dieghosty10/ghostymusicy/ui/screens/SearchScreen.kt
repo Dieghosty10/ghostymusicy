@@ -261,13 +261,7 @@ fun SearchScreen(
                             }
                         }
                     }
-                    item {
-                        Text("Explorar géneros",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 8.dp),
-                            color = MaterialTheme.colorScheme.onBackground)
-                    }
-                    item { ExploreGenreGrid(onGenreClick = { viewModel.performSearch(it) }) }
+
                 }
             }
         }
@@ -382,69 +376,6 @@ fun SuggestionRow(text: String, onClick: () -> Unit, onFillQuery: () -> Unit) {
             Icon(Icons.Rounded.NorthWest, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
         }
     }
-}
-
-
-@Composable
-fun ExploreGenreGrid(onGenreClick: (String) -> Unit) {
-    data class GenreCard(val name: String, val subLabel: String, val colorTop: Color, val colorBottom: Color, val icon: androidx.compose.ui.graphics.vector.ImageVector)
-    val genres = listOf(
-        GenreCard("Pop",       "Tendencias",   Color(0xFF6C63FF), Color(0xFF3B2F8A), Icons.Rounded.AutoAwesome),
-        GenreCard("Hip Hop",   "Cultura urbana",Color(0xFFFF6B35), Color(0xFF8A2B00), Icons.Rounded.Mic),
-        GenreCard("Reggaeton", "Latin trap",   Color(0xFF00C9A7), Color(0xFF007A63), Icons.Rounded.LocalFireDepartment),
-        GenreCard("Rock",      "Distorsión",   Color(0xFFE94560), Color(0xFF7A0020), Icons.Rounded.FlashOn),
-        GenreCard("R&B",       "Soul moderno", Color(0xFFB06EFF), Color(0xFF5A0099), Icons.Rounded.Nightlife),
-        GenreCard("Latin",     "Fusión latina",Color(0xFFFF9A3C), Color(0xFF8A4100), Icons.Rounded.Celebration),
-        GenreCard("Electronic","Beats & synth",Color(0xFF00D2FF), Color(0xFF003D99), Icons.Rounded.GraphicEq),
-        GenreCard("Jazz",      "Improvisación",Color(0xFFFFD166), Color(0xFF7A5C00), Icons.Rounded.MusicNote),
-        GenreCard("Clásica",   "Orquestal",    Color(0xFF88BDBC), Color(0xFF2E5F5E), Icons.Rounded.Piano),
-        GenreCard("Metal",     "Intensidad",   Color(0xFF9E9E9E), Color(0xFF212121), Icons.Rounded.Whatshot),
-    )
-    androidx.compose.foundation.lazy.LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(genres) { genre ->
-            Box(
-                modifier = Modifier
-                    .width(140.dp)
-                    .height(88.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(genre.colorTop, genre.colorBottom)
-                        )
-                    )
-                    .clickable { onGenreClick(genre.name) }
-                    .padding(14.dp)
-            ) {
-                Icon(
-                    imageVector = genre.icon,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.2f),
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(48.dp)
-                        .offset(x = 8.dp, y = (-8).dp)
-                        .graphicsLayer { rotationZ = 15f }
-                )
-                Column(modifier = Modifier.align(Alignment.BottomStart)) {
-                    Text(
-                        text = genre.name,
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.ExtraBold),
-                        color = Color.White,
-                        letterSpacing = (-0.3).sp
-                    )
-                    Text(
-                        text = genre.subLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.75f)
-                    )
-                }
-            }
-        }
-    }
-    Spacer(Modifier.height(12.dp))
 }
 
 // Compatibilidad con HomeScreen

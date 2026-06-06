@@ -175,6 +175,21 @@ fun SettingsScreen() {
             }
         }
 
+        // ── SECCIÓN: REPRODUCCIÓN ─────────────────────────────────────────
+        item { SettingsSectionHeader("Reproducción") }
+        item {
+            var smartRadioState by rememberPreference(com.dieghosty10.ghostymusicy.constants.SmartRadioKey, true)
+            SettingsCard {
+                SettingsSwitchRow(
+                    icon = Icons.Rounded.Radio,
+                    title = "Smart Radio",
+                    subtitle = "Continúa reproduciendo canciones similares al terminar la cola",
+                    checked = smartRadioState,
+                    onCheckedChange = { smartRadioState = it }
+                )
+            }
+        }
+
         // ── SECCIÓN: ACERCA DE ───────────────────────────────────────────
         item { SettingsSectionHeader("Acerca de") }
 
@@ -266,4 +281,24 @@ private fun SettingsInfoRow(icon: ImageVector, title: String, subtitle: String) 
     }
 }
 
-
+@Composable
+private fun SettingsSwitchRow(icon: ImageVector, title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.onSurface)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+    }
+}

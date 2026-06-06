@@ -41,6 +41,7 @@ import androidx.media3.common.Player
 import androidx.palette.graphics.Palette
 import coil3.asDrawable
 import coil3.compose.AsyncImage
+import androidx.media3.exoplayer.offline.Download
 import com.dieghosty10.ghostymusicy.LocalPlayerConnection
 import kotlinx.coroutines.delay
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,7 +51,7 @@ import androidx.compose.foundation.verticalScroll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlayerScreen() {
+fun PlayerScreen(navController: androidx.navigation.NavHostController) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState(initial = null)
     val isPlaying by playerConnection.isPlaying.collectAsState()
@@ -59,9 +60,11 @@ fun PlayerScreen() {
 
     var currentPosition by remember { mutableStateOf(0L) }
     var duration by remember { mutableStateOf(0L) }
-    var dominantColor by remember { mutableStateOf<Color?>(null) }
+    val dominantColor = com.dieghosty10.ghostymusicy.utils.rememberDominantColor(model = mediaMetadata?.thumbnailUrl)
     var isLiked by remember { mutableStateOf(false) }
-    var downloadState by remember { mutableStateOf<Int?>(null) } // null=not downloaded, 0=downloading, 1=downloaded
+    
+    val videoId = mediaMetadata?.id ?: ""
+    val download by playerConnection.getDownload(videoId).collectAsState(initial = null)
 
     var showQueue by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
@@ -113,8 +116,7 @@ fun PlayerScreen() {
 
     val bgGradient = Brush.verticalGradient(
         colors = listOf(
-            dominantColor?.copy(alpha = 0.7f) ?: Color(0xFF18181B),
-            Color(0xFF09090B),
+            dominantColor?.copy(alpha = 0.5f) ?: Color.Transparent,
             Color(0xFF09090B)
         )
     )
@@ -214,11 +216,7 @@ fun PlayerScreen() {
                         contentDescription = "Cover Art",
                         contentScale = ContentScale.Crop,
                         onSuccess = { state ->
-                            val drawable = state.result.image.asDrawable(context.resources)
-                            Palette.from(drawable.toBitmap()).generate { palette ->
-                                dominantColor = palette?.dominantSwatch?.rgb?.let { Color(it) }
-                                    ?: palette?.mutedSwatch?.rgb?.let { Color(it) }
-                            }
+                            // Palette is handled by rememberDominantColor
                         },
                         modifier = Modifier
                             .fillMaxSize()
@@ -416,14 +414,14 @@ fun PlayerScreen() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Descargar
-                val isDownloaded = downloadState == 1
-                val isDownloading = downloadState == 0
+                val isDownloaded = download?.state == Download.STATE_COMPLETED
+                val isDownloading = download?.state == Download.STATE_DOWNLOADING
                 IconButton(onClick = {
-                    val videoId = mediaMetadata?.id ?: return@IconButton
+                    val vId = mediaMetadata?.id ?: return@IconButton
                     val title = mediaMetadata?.title ?: "Song"
                     val downloadRequest = androidx.media3.exoplayer.offline.DownloadRequest
-                        .Builder(videoId, videoId.toUri())
-                        .setCustomCacheKey(videoId)
+                        .Builder(vId, vId.toUri())
+                        .setCustomCacheKey(vId)
                         .setData(title.toByteArray())
                         .build()
                     androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
@@ -432,7 +430,6 @@ fun PlayerScreen() {
                         downloadRequest,
                         false
                     )
-                    downloadState = 0
                     android.widget.Toast.makeText(context, "Descargando...", android.widget.Toast.LENGTH_SHORT).show()
                 }) {
                     Icon(
@@ -472,11 +469,19 @@ fun PlayerScreen() {
                     ) {
                         DropdownMenuItem(
                             text = { Text("Ver artista", color = Color.White) },
-                            onClick = { showMenu = false }
+                            onClick = { 
+                                showMenu = false
+                                val artistId = mediaMetadata?.artists?.firstOrNull()?.id ?: return@DropdownMenuItem
+                                navController.navigate(com.dieghosty10.ghostymusicy.ui.navigation.Routes.Artist(artistId))
+                            }
                         )
                         DropdownMenuItem(
                             text = { Text("Ver álbum", color = Color.White) },
-                            onClick = { showMenu = false }
+                            onClick = { 
+                                showMenu = false
+                                val albumId = mediaMetadata?.album?.id ?: return@DropdownMenuItem
+                                navController.navigate(com.dieghosty10.ghostymusicy.ui.navigation.Routes.Album(albumId))
+                            }
                         )
                         DropdownMenuItem(
                             text = { Text("Compartir", color = Color.White) },
