@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import com.dieghosty10.ghostymusicy.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -57,18 +59,13 @@ fun RegisterScreen(
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.primary)
-                        )
-                    ),
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.Rounded.MusicNote,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(40.dp)
+                androidx.compose.foundation.Image(
+                    painter = painterResource(id = R.drawable.logo_ghosty),
+                    contentDescription = "App Logo",
+                    modifier = Modifier.fillMaxSize()
                 )
             }
             Spacer(Modifier.height(32.dp))

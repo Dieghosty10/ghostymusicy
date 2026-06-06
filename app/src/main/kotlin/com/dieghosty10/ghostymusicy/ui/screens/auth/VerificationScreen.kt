@@ -26,6 +26,7 @@ fun VerificationScreen(
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val user by viewModel.currentUser.collectAsState()
+    val isVerified by viewModel.isEmailVerified.collectAsState()
     
     // Auto check every 3 seconds
     LaunchedEffect(Unit) {
@@ -35,8 +36,8 @@ fun VerificationScreen(
         }
     }
 
-    LaunchedEffect(user) {
-        if (user?.isEmailVerified == true) {
+    LaunchedEffect(isVerified) {
+        if (isVerified) {
             onNavigateToHome()
         }
     }

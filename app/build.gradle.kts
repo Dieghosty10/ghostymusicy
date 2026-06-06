@@ -34,10 +34,12 @@ val gitCommit = fetchGitCommitHash()
 
 android {
     namespace = "com.dieghosty10.ghostymusicy"
-    compileSdk = 35
+    compileSdk = 36
 
     configurations.all {
-        exclude(group = "com.google.protobuf", module = "protobuf-javalite")
+        resolutionStrategy {
+            force("com.google.protobuf:protobuf-javalite:3.25.1")
+        }
     }
 
     defaultConfig {

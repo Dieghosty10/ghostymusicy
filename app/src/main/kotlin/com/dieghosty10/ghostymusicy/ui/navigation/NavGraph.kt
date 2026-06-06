@@ -43,8 +43,10 @@ fun MainNavGraph(
         composable(Routes.LOGIN) {
             com.dieghosty10.ghostymusicy.ui.screens.auth.LoginScreen(
                 onNavigateToHome = {
-                    navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    val isFirstTime = com.dieghosty10.ghostymusicy.utils.PreferenceStore.get(com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey) ?: true
+                    val nextRoute = if (isFirstTime) Routes.ONBOARDING else Routes.HOME
+                    navController.navigate(nextRoute) {
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 onNavigateToRegister = {
@@ -56,7 +58,7 @@ fun MainNavGraph(
             com.dieghosty10.ghostymusicy.ui.screens.auth.RegisterScreen(
                 onNavigateToVerification = {
                     navController.navigate(Routes.VERIFICATION) {
-                        popUpTo(Routes.REGISTER) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 onNavigateBackToLogin = { navController.popBackStack() }
@@ -65,13 +67,15 @@ fun MainNavGraph(
         composable(Routes.VERIFICATION) {
             com.dieghosty10.ghostymusicy.ui.screens.auth.VerificationScreen(
                 onNavigateToHome = {
-                    navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.VERIFICATION) { inclusive = true }
+                    val isFirstTime = com.dieghosty10.ghostymusicy.utils.PreferenceStore.get(com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey) ?: true
+                    val nextRoute = if (isFirstTime) Routes.ONBOARDING else Routes.HOME
+                    navController.navigate(nextRoute) {
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 onNavigateToLogin = {
                     navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.VERIFICATION) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )

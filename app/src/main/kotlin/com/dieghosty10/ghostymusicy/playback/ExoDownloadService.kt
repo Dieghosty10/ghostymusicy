@@ -96,7 +96,15 @@ class ExoDownloadService : DownloadService(
             if (download.state == Download.STATE_FAILED) {
                 val notification = notificationHelper.buildDownloadFailedNotification(
                     context,
-                    R.drawable.error,
+                    R.drawable.small_icon,
+                    null,
+                    Util.fromUtf8Bytes(download.request.data)
+                )
+                NotificationUtil.setNotification(context, nextNotificationId++, notification)
+            } else if (download.state == Download.STATE_COMPLETED) {
+                val notification = notificationHelper.buildDownloadCompletedNotification(
+                    context,
+                    R.drawable.small_icon,
                     null,
                     Util.fromUtf8Bytes(download.request.data)
                 )

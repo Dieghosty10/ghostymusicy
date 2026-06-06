@@ -72,7 +72,7 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize().haze(hazeState),
             contentPadding = PaddingValues(
                 top    = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 8.dp,
-                bottom = 90.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+                bottom = 120.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
             )
         ) {
             // ── Header ─────────────────────────────────────────────────────
@@ -483,8 +483,7 @@ fun StatsSheetContent(recentEvents: List<EventWithSong>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp)
-            .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(

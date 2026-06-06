@@ -28,6 +28,9 @@ class AuthViewModel @Inject constructor() : ViewModel() {
     private val _isSuspended = MutableStateFlow<Boolean>(false)
     val isSuspended: StateFlow<Boolean> = _isSuspended.asStateFlow()
 
+    private val _isEmailVerified = MutableStateFlow<Boolean>(auth.currentUser?.isEmailVerified == true)
+    val isEmailVerified: StateFlow<Boolean> = _isEmailVerified.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -40,10 +43,12 @@ class AuthViewModel @Inject constructor() : ViewModel() {
 
     fun checkAuthState() {
         _currentUser.value = auth.currentUser
+        _isEmailVerified.value = auth.currentUser?.isEmailVerified == true
         auth.currentUser?.let { user ->
-            user.reload()
             viewModelScope.launch {
                 try {
+                    user.reload().await()
+                    _isEmailVerified.value = user.isEmailVerified
                     val doc = firestore.collection("users").document(user.uid).get().await()
                     _userRole.value = doc.getString("role") ?: "user"
                     _isSuspended.value = doc.getBoolean("isSuspended") ?: false
