@@ -53,13 +53,14 @@ fun HomeScreen(
     val homePage     by viewModel.homePage.collectAsState()
     val isLoading    by viewModel.isLoading.collectAsState()
     val recentEvents by viewModel.recentEvents.collectAsState()
+    val heroArtist   by viewModel.heroArtist.collectAsState()
     val playerConnection = LocalPlayerConnection.current
 
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     val greeting = when (hour) {
-        in 5..11  -> "Buenos días ☀️"
-        in 12..17 -> "Buenas tardes 🎵"
-        else      -> "Buenas noches 🌙"
+        in 5..11  -> "Buenos días"
+        in 12..17 -> "Buenas tardes"
+        else      -> "Buenas noches"
     }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -70,7 +71,7 @@ fun HomeScreen(
                 bottom = 140.dp,
             )
         ) {
-            // ── Header (Search & Chips) ─────────────────────────────────────────────────────
+            // ── Header ─────────────────────────────────────────────────────
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)
@@ -94,49 +95,66 @@ fun HomeScreen(
                             }
                         }
                     }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Falso Search Bar que redirige a la pantalla de búsqueda
-                    Row(
+                }
+            }
+
+            // ── Hero Card ────────────────────────────────────────────────────────
+            if (heroArtist != null) {
+                item {
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp)
-                            .clip(RoundedCornerShape(26.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { navController.navigate(Routes.SEARCH) }
-                            .padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
+                            .height(220.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        elevation = CardDefaults.cardElevation(8.dp)
                     ) {
-                        Icon(Icons.Rounded.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            "Buscar canciones, álbumes, artistas...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Chips de filtrado visuales
-                    var selectedChip by remember { mutableStateOf("Todo") }
-                    val chips = listOf("Todo", "Mixes", "Canciones", "Álbumes", "Artistas")
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(chips) { chip ->
-                            val isSelected = selectedChip == chip
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            AsyncImage(
+                                model = heroArtist!!.artist.thumbnail,
+                                contentDescription = heroArtist!!.artist.title,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-                                    .clickable { selectedChip = chip }
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(Color.Transparent, Color.Black.copy(0.9f)),
+                                            startY = 100f
+                                        )
+                                    )
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(16.dp)
                             ) {
                                 Text(
-                                    text = chip,
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = "Para ti",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Color.White.copy(0.7f)
                                 )
+                                Text(
+                                    text = heroArtist!!.artist.title,
+                                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(
+                                    onClick = {
+                                        heroArtist!!.artist.radioEndpoint?.let { endpoint ->
+                                            playerConnection?.playQueue(YouTubeQueue(endpoint))
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                    shape = RoundedCornerShape(50)
+                                ) {
+                                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Reproducir mix", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                                }
                             }
                         }
                     }

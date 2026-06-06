@@ -167,10 +167,36 @@ fun SearchScreen(
                 val currentResults = results[activeTab]?.items ?: emptyList()
                 if (currentResults.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Rounded.SearchOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(48.dp))
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(32.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Rounded.SearchOff,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(64.dp)
+                                )
+                            }
+                            Spacer(Modifier.height(24.dp))
+                            Text(
+                                "No encontramos nada",
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
                             Spacer(Modifier.height(8.dp))
-                            Text("Sin resultados en ${activeTab.label}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "No se encontraron resultados para tu búsqueda en ${activeTab.label}. Intenta con otras palabras clave.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
                         }
                     }
                 } else {
@@ -211,14 +237,29 @@ fun SearchScreen(
                                 }
                             }
                         }
-                        items(recentSearches) { recent ->
-                            RecentSearchRow(
-                                text     = recent,
-                                onClick  = { viewModel.performSearch(recent) },
-                                onDelete = { viewModel.removeRecentSearch(recent) }
-                            )
+                        item {
+                            androidx.compose.foundation.lazy.LazyRow(
+                                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(recentSearches) { recent ->
+                                    SuggestionChip(
+                                        onClick = { viewModel.performSearch(recent) },
+                                        label = { Text(recent) },
+                                        icon = { Icon(Icons.Rounded.History, null, modifier = Modifier.size(16.dp)) },
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = SuggestionChipDefaults.suggestionChipColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                        ),
+                                        border = SuggestionChipDefaults.suggestionChipBorder(
+                                            enabled = true,
+                                            borderColor = Color.Transparent
+                                        )
+                                    )
+                                }
+                            }
                         }
-                        item { HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.padding(vertical = 8.dp)) }
                     }
                     item {
                         Text("Explorar géneros",
@@ -343,35 +384,21 @@ fun SuggestionRow(text: String, onClick: () -> Unit, onFillQuery: () -> Unit) {
     }
 }
 
-@Composable
-fun RecentSearchRow(text: String, onClick: () -> Unit, onDelete: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(horizontal = 20.dp, vertical = 11.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(Icons.Rounded.History, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-        Text(text, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Rounded.Clear, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-        }
-    }
-}
 
 @Composable
 fun ExploreGenreGrid(onGenreClick: (String) -> Unit) {
-    data class GenreCard(val name: String, val subLabel: String, val colorTop: Color, val colorBottom: Color)
+    data class GenreCard(val name: String, val subLabel: String, val colorTop: Color, val colorBottom: Color, val icon: androidx.compose.ui.graphics.vector.ImageVector)
     val genres = listOf(
-        GenreCard("Pop",       "Tendencias",   Color(0xFF6C63FF), Color(0xFF3B2F8A)),
-        GenreCard("Hip Hop",   "Cultura urbana",Color(0xFFFF6B35), Color(0xFF8A2B00)),
-        GenreCard("Reggaeton", "Latin trap",   Color(0xFF00C9A7), Color(0xFF007A63)),
-        GenreCard("Rock",      "Distorsión",   Color(0xFFE94560), Color(0xFF7A0020)),
-        GenreCard("R&B",       "Soul moderno", Color(0xFFB06EFF), Color(0xFF5A0099)),
-        GenreCard("Latin",     "Fusión latina",Color(0xFFFF9A3C), Color(0xFF8A4100)),
-        GenreCard("Electronic","Beats & synth",Color(0xFF00D2FF), Color(0xFF003D99)),
-        GenreCard("Jazz",      "Improvisación",Color(0xFFFFD166), Color(0xFF7A5C00)),
-        GenreCard("Clásica",   "Orquestal",    Color(0xFF88BDBC), Color(0xFF2E5F5E)),
-        GenreCard("Metal",     "Intensidad",   Color(0xFF9E9E9E), Color(0xFF212121)),
+        GenreCard("Pop",       "Tendencias",   Color(0xFF6C63FF), Color(0xFF3B2F8A), Icons.Rounded.AutoAwesome),
+        GenreCard("Hip Hop",   "Cultura urbana",Color(0xFFFF6B35), Color(0xFF8A2B00), Icons.Rounded.Mic),
+        GenreCard("Reggaeton", "Latin trap",   Color(0xFF00C9A7), Color(0xFF007A63), Icons.Rounded.LocalFireDepartment),
+        GenreCard("Rock",      "Distorsión",   Color(0xFFE94560), Color(0xFF7A0020), Icons.Rounded.FlashOn),
+        GenreCard("R&B",       "Soul moderno", Color(0xFFB06EFF), Color(0xFF5A0099), Icons.Rounded.Nightlife),
+        GenreCard("Latin",     "Fusión latina",Color(0xFFFF9A3C), Color(0xFF8A4100), Icons.Rounded.Celebration),
+        GenreCard("Electronic","Beats & synth",Color(0xFF00D2FF), Color(0xFF003D99), Icons.Rounded.GraphicEq),
+        GenreCard("Jazz",      "Improvisación",Color(0xFFFFD166), Color(0xFF7A5C00), Icons.Rounded.MusicNote),
+        GenreCard("Clásica",   "Orquestal",    Color(0xFF88BDBC), Color(0xFF2E5F5E), Icons.Rounded.Piano),
+        GenreCard("Metal",     "Intensidad",   Color(0xFF9E9E9E), Color(0xFF212121), Icons.Rounded.Whatshot),
     )
     androidx.compose.foundation.lazy.LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
@@ -391,6 +418,16 @@ fun ExploreGenreGrid(onGenreClick: (String) -> Unit) {
                     .clickable { onGenreClick(genre.name) }
                     .padding(14.dp)
             ) {
+                Icon(
+                    imageVector = genre.icon,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.2f),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(48.dp)
+                        .offset(x = 8.dp, y = (-8).dp)
+                        .graphicsLayer { rotationZ = 15f }
+                )
                 Column(modifier = Modifier.align(Alignment.BottomStart)) {
                     Text(
                         text = genre.name,

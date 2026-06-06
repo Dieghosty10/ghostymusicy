@@ -26,6 +26,9 @@ class HomeViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _heroArtist = MutableStateFlow<com.dieghosty10.ghostymusicy.innertube.pages.ArtistPage?>(null)
+    val heroArtist: StateFlow<com.dieghosty10.ghostymusicy.innertube.pages.ArtistPage?> = _heroArtist.asStateFlow()
+
     // Historial de escucha para personalizar sugerencias en el inicio
     val recentEvents: StateFlow<List<EventWithSong>> =
         database.events()
@@ -47,6 +50,14 @@ class HomeViewModel @Inject constructor(
                 )
                 if (!favoritesStr.isNullOrEmpty()) {
                     val favList = favoritesStr.split(",")
+                    val heroArtistId = favList.firstOrNull()
+                    if (heroArtistId != null) {
+                        try {
+                            _heroArtist.value = YouTube.artist(heroArtistId).getOrNull()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
                     val randomFavs = favList.shuffled().take(3) // Tomar 3 artistas al azar
                     val sections = coroutineScope {
                         randomFavs.map { favId ->

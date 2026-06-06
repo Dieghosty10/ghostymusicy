@@ -3,7 +3,9 @@ package com.dieghosty10.ghostymusicy.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dieghosty10.ghostymusicy.innertube.YouTube
+import com.dieghosty10.ghostymusicy.innertube.models.SongItem
 import com.dieghosty10.ghostymusicy.innertube.models.WatchEndpoint
+import com.dieghosty10.ghostymusicy.models.MediaMetadata
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +26,8 @@ class LyricsViewModel @Inject constructor() : ViewModel() {
     private var fetchJob: Job? = null
     private var currentVideoId: String? = null
 
-    fun fetchLyrics(videoId: String) {
+    fun fetchLyrics(mediaMetadata: MediaMetadata) {
+        val videoId = mediaMetadata.id
         if (videoId == currentVideoId) return
         currentVideoId = videoId
         fetchJob?.cancel()
@@ -33,22 +36,54 @@ class LyricsViewModel @Inject constructor() : ViewModel() {
             _isLoading.value = true
             _lyrics.value = null
             
+            val query = "${mediaMetadata.title} ${mediaMetadata.artists.firstOrNull()?.name ?: ""} lyrics"
+            
             YouTube.next(WatchEndpoint(videoId = videoId)).onSuccess { nextResult ->
                 val lyricsEndpoint = nextResult.lyricsEndpoint
                 if (lyricsEndpoint != null) {
                     YouTube.lyrics(lyricsEndpoint).onSuccess { lyricsResult ->
-                        _lyrics.value = lyricsResult ?: "Letra no disponible"
+                        if (lyricsResult != null) {
+                            _lyrics.value = lyricsResult
+                        } else {
+                            fetchFallback(query)
+                        }
                     }.onFailure {
-                        _lyrics.value = "Letra no disponible"
+                        fetchFallback(query)
                     }
                 } else {
-                    _lyrics.value = "Letra no disponible"
+                    fetchFallback(query)
                 }
             }.onFailure {
-                _lyrics.value = "Letra no disponible"
+                fetchFallback(query)
             }
             
             _isLoading.value = false
+        }
+    }
+
+    private suspend fun fetchFallback(query: String) {
+        YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).onSuccess { searchResult ->
+            val fallbackItem = searchResult.items.firstOrNull { it is SongItem } as? SongItem
+            if (fallbackItem != null) {
+                YouTube.next(WatchEndpoint(videoId = fallbackItem.id)).onSuccess { nextResult ->
+                    val lyricsEndpoint = nextResult.lyricsEndpoint
+                    if (lyricsEndpoint != null) {
+                        YouTube.lyrics(lyricsEndpoint).onSuccess { lyricsResult ->
+                            _lyrics.value = lyricsResult
+                        }.onFailure {
+                            _lyrics.value = null
+                        }
+                    } else {
+                        _lyrics.value = null
+                    }
+                }.onFailure {
+                    _lyrics.value = null
+                }
+            } else {
+                _lyrics.value = null
+            }
+        }.onFailure {
+            _lyrics.value = null
         }
     }
 }

@@ -63,6 +63,11 @@ fun PlayerScreen() {
     var isLiked by remember { mutableStateOf(false) }
     var downloadState by remember { mutableStateOf<Int?>(null) } // null=not downloaded, 0=downloading, 1=downloaded
 
+    var showQueue by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    val queueItems by playerConnection.queueItems.collectAsState()
+    val currentMediaItemIndex by playerConnection.currentMediaItemIndex.collectAsState()
+
     var showLyrics by remember { mutableStateOf(false) }
     val lyricsViewModel = hiltViewModel<LyricsViewModel>()
     val lyrics by lyricsViewModel.lyrics.collectAsState()
@@ -70,8 +75,8 @@ fun PlayerScreen() {
 
     // Auto-fetch lyrics when song changes
     LaunchedEffect(mediaMetadata?.id) {
-        mediaMetadata?.id?.let { videoId ->
-            lyricsViewModel.fetchLyrics(videoId)
+        mediaMetadata?.let { meta ->
+            lyricsViewModel.fetchLyrics(meta)
         }
     }
 
@@ -149,13 +154,28 @@ fun PlayerScreen() {
                 ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Fuente de la cola
-            Text(
-                text = "Reproduciendo",
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = 0.6f),
-                letterSpacing = 2.sp
-            )
+            // Fuente de la cola y botón de Queue
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Reproduciendo",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White.copy(alpha = 0.6f),
+                    letterSpacing = 2.sp
+                )
+                IconButton(
+                    onClick = { showQueue = true },
+                    modifier = Modifier.align(Alignment.CenterEnd).size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.QueueMusic,
+                        contentDescription = "Cola de reproducción",
+                        tint = Color.White.copy(alpha = 0.6f)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -413,6 +433,7 @@ fun PlayerScreen() {
                         false
                     )
                     downloadState = 0
+                    android.widget.Toast.makeText(context, "Descargando...", android.widget.Toast.LENGTH_SHORT).show()
                 }) {
                     Icon(
                         if (isDownloaded) Icons.Rounded.DownloadDone
@@ -434,32 +455,43 @@ fun PlayerScreen() {
                         modifier = Modifier.size(24.dp)
                     )
                 }
-                // Compartir
-                val context = LocalContext.current
-                IconButton(onClick = {
-                    mediaMetadata?.id?.let { videoId ->
-                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(android.content.Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=$videoId")
-                        }
-                        context.startActivity(android.content.Intent.createChooser(intent, "Compartir canción"))
+                // Menú de opciones (3 puntos)
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(
+                            Icons.Rounded.MoreVert,
+                            contentDescription = "Más opciones",
+                            tint = Color.White.copy(alpha = 0.6f),
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
-                }) {
-                    Icon(
-                        Icons.Rounded.Share,
-                        contentDescription = "Compartir",
-                        tint = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                // Temporizador (Sleep Timer)
-                IconButton(onClick = {}) {
-                    Icon(
-                        Icons.Rounded.Timer,
-                        contentDescription = "Temporizador",
-                        tint = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(24.dp)
-                    )
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier.background(Color(0xFF141414))
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Ver artista", color = Color.White) },
+                            onClick = { showMenu = false }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Ver álbum", color = Color.White) },
+                            onClick = { showMenu = false }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Compartir", color = Color.White) },
+                            onClick = { 
+                                showMenu = false
+                                mediaMetadata?.id?.let { videoId ->
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(android.content.Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=$videoId")
+                                    }
+                                    context.startActivity(android.content.Intent.createChooser(intent, "Compartir canción"))
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -510,20 +542,140 @@ fun PlayerScreen() {
                     Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = dominantColor ?: MaterialTheme.colorScheme.primary)
                     }
+                } else if (lyrics == null) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.SearchOff,
+                            contentDescription = "Sin letra",
+                            tint = Color.White.copy(alpha = 0.2f),
+                            modifier = Modifier.size(80.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Esta canción no tiene letra disponible.",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White.copy(alpha = 0.8f),
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Intenta buscar una versión diferente de la canción.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.5f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 } else {
                     Text(
-                        text = lyrics ?: "No hay letra disponible para esta canción",
+                        text = lyrics!!,
                         style = MaterialTheme.typography.bodyLarge.copy(
                             lineHeight = 32.sp,
                             letterSpacing = 0.sp
                         ),
-                        color = if (lyrics != null) Color.White else Color.White.copy(alpha = 0.5f),
+                        color = Color.White,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f, fill = false)
                             .verticalScroll(rememberScrollState())
                     )
+                }
+            }
+        }
+    }
+
+    if (showQueue) {
+        ModalBottomSheet(
+            onDismissRequest = { showQueue = false },
+            containerColor = dominantColor?.copy(alpha = 0.15f)?.let {
+                androidx.compose.ui.graphics.lerp(Color(0xFF09090B), it, 0.6f)
+            } ?: Color(0xFF141414),
+            scrimColor = Color.Black.copy(alpha = 0.6f),
+            dragHandle = {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 12.dp, bottom = 8.dp)
+                        .width(36.dp)
+                        .height(4.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.3f))
+                )
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 28.dp)
+                    .padding(bottom = 48.dp)
+            ) {
+                Text(
+                    text = "Cola de reproducción",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.5).sp
+                    ),
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                androidx.compose.foundation.lazy.LazyColumn(
+                    modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
+                ) {
+                    items(queueItems.size) { index ->
+                        val item = queueItems[index]
+                        val isCurrent = index == currentMediaItemIndex
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                                .clickable {
+                                    playerConnection.player.seekToDefaultPosition(index)
+                                    showQueue = false
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = item.mediaMetadata.artworkUri,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFF27272A))
+                            )
+                            Spacer(Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = item.mediaMetadata.title?.toString() ?: "Desconocido",
+                                    color = if (isCurrent) (dominantColor ?: MaterialTheme.colorScheme.primary) else Color.White,
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (isCurrent) FontWeight.ExtraBold else FontWeight.Normal),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = item.mediaMetadata.artist?.toString() ?: "",
+                                    color = if (isCurrent) (dominantColor ?: MaterialTheme.colorScheme.primary).copy(alpha = 0.8f) else Color.White.copy(alpha = 0.6f),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            if (isCurrent) {
+                                Icon(
+                                    Icons.Rounded.VolumeUp,
+                                    contentDescription = "Reproduciendo",
+                                    tint = dominantColor ?: MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

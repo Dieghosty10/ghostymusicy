@@ -70,6 +70,8 @@ class PlayerConnection(
 
     val queueTitle = MutableStateFlow<String?>(null)
     val queueWindows = MutableStateFlow<List<Timeline.Window>>(emptyList())
+    val queueItems = MutableStateFlow<List<MediaItem>>(emptyList())
+    val currentTimeline = MutableStateFlow(player.currentTimeline)
     val currentMediaItemIndex = MutableStateFlow(-1)
     val currentWindowIndex = MutableStateFlow(-1)
 
@@ -91,6 +93,8 @@ class PlayerConnection(
         playbackParameters.value = player.playbackParameters
         queueTitle.value = service.queueTitle
         queueWindows.value = player.getQueueWindows()
+        queueItems.value = player.getQueueWindows().map { it.mediaItem }
+        currentTimeline.value = player.currentTimeline
         currentWindowIndex.value = player.getCurrentQueueIndex()
         currentMediaItemIndex.value = player.currentMediaItemIndex
         shuffleModeEnabled.value = player.shuffleModeEnabled
@@ -188,7 +192,10 @@ class PlayerConnection(
         timeline: Timeline,
         reason: Int,
     ) {
-        queueWindows.value = player.getQueueWindows()
+        val windows = player.getQueueWindows()
+        queueWindows.value = windows
+        queueItems.value = windows.map { it.mediaItem }
+        currentTimeline.value = timeline
         queueTitle.value = service.queueTitle
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()
@@ -197,7 +204,9 @@ class PlayerConnection(
 
     override fun onShuffleModeEnabledChanged(enabled: Boolean) {
         shuffleModeEnabled.value = enabled
-        queueWindows.value = player.getQueueWindows()
+        val windows = player.getQueueWindows()
+        queueWindows.value = windows
+        queueItems.value = windows.map { it.mediaItem }
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
     }

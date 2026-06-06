@@ -92,8 +92,10 @@ class MainActivity : ComponentActivity() {
                     NavItem(Routes.SETTINGS, Icons.Rounded.Settings,  "Ajustes"),
                 )
 
-                val isFirstTime by com.dieghosty10.ghostymusicy.utils.rememberPreference(com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey, true)
-                val startDest = if (isFirstTime) Routes.ONBOARDING else Routes.HOME
+                val startDest = remember {
+                    val isFirstTimeValue = com.dieghosty10.ghostymusicy.utils.PreferenceStore.get(com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey) ?: true
+                    if (isFirstTimeValue) Routes.ONBOARDING else Routes.HOME
+                }
 
                 CompositionLocalProvider(LocalPlayerConnection provides playerConnection) {
                     Scaffold(
