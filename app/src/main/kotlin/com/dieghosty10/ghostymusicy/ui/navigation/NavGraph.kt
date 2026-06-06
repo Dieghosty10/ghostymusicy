@@ -12,6 +12,10 @@ import com.dieghosty10.ghostymusicy.ui.screens.SettingsScreen
 import dev.chrisbanes.haze.HazeState
 
 object Routes {
+    const val LOGIN = "login"
+    const val REGISTER = "register"
+    const val VERIFICATION = "verification"
+    const val ADMIN = "admin"
     const val ONBOARDING = "onboarding"
     const val HOME     = "home"
     const val SEARCH   = "search"
@@ -36,6 +40,47 @@ fun MainNavGraph(
         startDestination = startDestination,
         modifier        = modifier,
     ) {
+        composable(Routes.LOGIN) {
+            com.dieghosty10.ghostymusicy.ui.screens.auth.LoginScreen(
+                onNavigateToHome = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(Routes.REGISTER)
+                }
+            )
+        }
+        composable(Routes.REGISTER) {
+            com.dieghosty10.ghostymusicy.ui.screens.auth.RegisterScreen(
+                onNavigateToVerification = {
+                    navController.navigate(Routes.VERIFICATION) {
+                        popUpTo(Routes.REGISTER) { inclusive = true }
+                    }
+                },
+                onNavigateBackToLogin = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.VERIFICATION) {
+            com.dieghosty10.ghostymusicy.ui.screens.auth.VerificationScreen(
+                onNavigateToHome = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.VERIFICATION) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.VERIFICATION) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable(Routes.ADMIN) {
+            com.dieghosty10.ghostymusicy.ui.screens.admin.AdminDashboardScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
         composable(Routes.ONBOARDING) {
             com.dieghosty10.ghostymusicy.ui.screens.OnboardingScreen(
                 onFinish = {

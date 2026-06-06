@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -92,19 +93,35 @@ class MainActivity : ComponentActivity() {
                     NavItem(Routes.SETTINGS, Icons.Rounded.Settings,  "Ajustes"),
                 )
 
-                val startDest = remember {
+                var startDest by remember { mutableStateOf<String?>(null) }
+
+                LaunchedEffect(Unit) {
+                    val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+                    val user = auth.currentUser
                     val isFirstTimeValue = com.dieghosty10.ghostymusicy.utils.PreferenceStore.get(com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey) ?: true
-                    if (isFirstTimeValue) Routes.ONBOARDING else Routes.HOME
+                    
+                    startDest = when {
+                        user == null -> Routes.LOGIN
+                        !user.isEmailVerified -> Routes.VERIFICATION
+                        isFirstTimeValue -> Routes.ONBOARDING
+                        else -> Routes.HOME
+                    }
                 }
 
-                CompositionLocalProvider(LocalPlayerConnection provides playerConnection) {
-                    Scaffold(
+                if (startDest == null) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    CompositionLocalProvider(LocalPlayerConnection provides playerConnection) {
+                        Scaffold(
                         bottomBar = {
                             val backStack by navController.currentBackStackEntryAsState()
                             val current   = backStack?.destination?.route
 
-                            // Ocultar bottom bar cuando está en el reproductor o en el onboarding
-                            if (current != Routes.PLAYER && current != Routes.ONBOARDING) {
+                            // Ocultar bottom bar cuando está en el reproductor o en el onboarding o auth
+                            val hiddenRoutes = listOf(Routes.PLAYER, Routes.ONBOARDING, Routes.LOGIN, Routes.REGISTER, Routes.VERIFICATION, Routes.ADMIN)
+                            if (current !in hiddenRoutes) {
                                 Column {
                                     MiniPlayer(
                                         onClick = {
@@ -160,7 +177,7 @@ class MainActivity : ComponentActivity() {
                     ) { innerPadding ->
                         MainNavGraph(
                             navController = navController,
-                            startDestination = startDest,
+                            startDestination = startDest ?: Routes.LOGIN,
                             hazeState     = hazeState,
                             modifier      = Modifier,
                         )
@@ -168,6 +185,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
     }
 
     override fun onDestroy() {

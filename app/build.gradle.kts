@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.compiler)
+    id("com.google.gms.google-services")
 }
 
 fun fetchGitCommitHash(): String {
@@ -174,6 +175,11 @@ ksp {
 }
 
 dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx") {
+        exclude(group = "com.google.firebase", module = "protolite-well-known-types")
+    }
     implementation("com.google.code.gson:gson:2.10.1")
     implementation(libs.guava)
     implementation(libs.coroutines.guava)
