@@ -40,7 +40,7 @@ class OnboardingViewModel @Inject constructor() : ViewModel() {
                 val artists = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     val deferredList = mutableListOf<kotlinx.coroutines.Deferred<ArtistItem?>>()
                     for (query in famousQueries) {
-                        deferredList.add(kotlinx.coroutines.async {
+                        deferredList.add(async {
                             val result = YouTube.search(query, YouTube.SearchFilter.FILTER_ARTIST).getOrNull()
                             result?.items?.filterIsInstance<ArtistItem>()?.firstOrNull()
                         })
