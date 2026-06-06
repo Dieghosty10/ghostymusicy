@@ -12,6 +12,7 @@ import com.dieghosty10.ghostymusicy.ui.screens.SettingsScreen
 import dev.chrisbanes.haze.HazeState
 
 object Routes {
+    const val ONBOARDING = "onboarding"
     const val HOME     = "home"
     const val SEARCH   = "search"
     const val PLAYER   = "player"
@@ -25,14 +26,24 @@ object Routes {
 @Composable
 fun MainNavGraph(
     navController: NavHostController,
+    startDestination: String = Routes.HOME,
     hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
     NavHost(
         navController   = navController,
-        startDestination = Routes.HOME,
+        startDestination = startDestination,
         modifier        = modifier,
     ) {
+        composable(Routes.ONBOARDING) {
+            com.dieghosty10.ghostymusicy.ui.screens.OnboardingScreen(
+                onFinish = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.ONBOARDING) { inclusive = true }
+                    }
+                }
+            )
+        }
         composable(Routes.HOME) {
             HomeScreen(hazeState = hazeState, navController = navController)
         }

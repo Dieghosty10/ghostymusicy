@@ -383,13 +383,15 @@ fun PlayerScreen() {
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Queue
-                IconButton(onClick = {}) {
+                // Descargar
+                IconButton(onClick = {
+                    // Aquí llamaremos al ExoDownloadService en la siguiente fase
+                }) {
                     Icon(
-                        Icons.Rounded.QueueMusic,
-                        contentDescription = "Cola",
+                        Icons.Rounded.Download,
+                        contentDescription = "Descargar",
                         tint = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
                 // Letras
@@ -403,7 +405,7 @@ fun PlayerScreen() {
                         Icons.Rounded.Lyrics,
                         contentDescription = "Letra",
                         tint = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
                 // Compartir
@@ -421,16 +423,16 @@ fun PlayerScreen() {
                         Icons.Rounded.Share,
                         contentDescription = "Compartir",
                         tint = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
-                // Más opciones
+                // Temporizador (Sleep Timer)
                 IconButton(onClick = {}) {
                     Icon(
-                        Icons.Rounded.MoreHoriz,
-                        contentDescription = "Más",
+                        Icons.Rounded.Timer,
+                        contentDescription = "Temporizador",
                         tint = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }

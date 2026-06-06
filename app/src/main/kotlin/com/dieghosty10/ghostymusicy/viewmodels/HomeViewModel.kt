@@ -13,6 +13,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
     private val database: MusicDatabase
 ) : ViewModel() {
 
@@ -35,7 +36,50 @@ class HomeViewModel @Inject constructor(
     fun fetchHome() {
         viewModelScope.launch {
             _isLoading.value = true
-            YouTube.home().onSuccess { _homePage.value = it }
+            
+            val customSections = mutableListOf<HomePage.Section>()
+            // Leer favoritos
+                val favoritesStr = com.dieghosty10.ghostymusicy.utils.PreferenceStore.get(
+                    com.dieghosty10.ghostymusicy.constants.SelectedFavoriteArtistsKey
+                )
+                if (!favoritesStr.isNullOrEmpty()) {
+                    val favList = favoritesStr.split(",")
+                    val randomFavs = favList.shuffled().take(2) // Tomar 2 artistas al azar
+                    for (favId in randomFavs) {
+                        try {
+                            val artistPage = YouTube.artist(favId).getOrNull() ?: continue
+                            val songsSection = artistPage.sections?.find { it.title.contains("Canciones", ignoreCase = true) || it.title.contains("Songs", ignoreCase = true) }
+                            val albumsSection = artistPage.sections?.find { it.title.contains("Álbum", ignoreCase = true) || it.title.contains("Album", ignoreCase = true) }
+                            
+                            val items = mutableListOf<com.dieghosty10.ghostymusicy.innertube.models.YTItem>()
+                            songsSection?.items?.take(5)?.let { items.addAll(it) }
+                            albumsSection?.items?.take(5)?.let { items.addAll(it) }
+                            
+                            if (items.isNotEmpty()) {
+                                customSections.add(
+                                    HomePage.Section(
+                                        title = "Porque te gusta ${artistPage.artist.title}",
+                                        label = null,
+                                        thumbnail = null,
+                                        endpoint = null,
+                                        items = items.shuffled()
+                                    )
+                                )
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            
+            YouTube.home().onSuccess { homePage -> 
+                val finalSections = customSections + homePage.sections
+                _homePage.value = homePage.copy(sections = finalSections)
+            }.onFailure {
+                if (customSections.isNotEmpty()) {
+                    _homePage.value = HomePage(sections = customSections, chips = null, continuation = null)
+                }
+            }
             _isLoading.value = false
         }
     }

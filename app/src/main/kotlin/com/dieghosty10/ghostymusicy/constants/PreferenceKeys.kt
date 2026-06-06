@@ -38,6 +38,8 @@ val SeekExtraSeconds = booleanPreferencesKey("seekExtraSeconds")
 val DisableBlurKey = booleanPreferencesKey("disableBlur")
 val BlurRadiusKey = floatPreferencesKey("blurRadius")
 val MiniPlayerLastAnchorKey = intPreferencesKey("miniPlayerLastAnchor")
+val IsFirstTimeAppLaunchKey = booleanPreferencesKey("isFirstTimeAppLaunch")
+val SelectedFavoriteArtistsKey = stringPreferencesKey("selectedFavoriteArtists")
 
 enum class SliderStyle {
     Standard,

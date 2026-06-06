@@ -92,14 +92,17 @@ class MainActivity : ComponentActivity() {
                     NavItem(Routes.SETTINGS, Icons.Rounded.Settings,  "Ajustes"),
                 )
 
+                val isFirstTime by com.dieghosty10.ghostymusicy.utils.rememberPreference(com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey, true)
+                val startDest = if (isFirstTime) Routes.ONBOARDING else Routes.HOME
+
                 CompositionLocalProvider(LocalPlayerConnection provides playerConnection) {
                     Scaffold(
                         bottomBar = {
                             val backStack by navController.currentBackStackEntryAsState()
                             val current   = backStack?.destination?.route
 
-                            // Ocultar bottom bar cuando está en el reproductor
-                            if (current != Routes.PLAYER) {
+                            // Ocultar bottom bar cuando está en el reproductor o en el onboarding
+                            if (current != Routes.PLAYER && current != Routes.ONBOARDING) {
                                 Column {
                                     MiniPlayer(
                                         onClick = {
@@ -155,6 +158,7 @@ class MainActivity : ComponentActivity() {
                     ) { innerPadding ->
                         MainNavGraph(
                             navController = navController,
+                            startDestination = startDest,
                             hazeState     = hazeState,
                             modifier      = Modifier.padding(innerPadding),
                         )
