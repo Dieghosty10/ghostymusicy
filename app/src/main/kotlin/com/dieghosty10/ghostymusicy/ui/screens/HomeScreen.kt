@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -168,23 +169,58 @@ fun HomeScreen(
                     }
                 }
 
-                // ── Secciones de YouTube Music ─────────────────────────────
-                homePage?.sections?.forEach { section ->
-                    item { SectionTitle(section.title) }
-                    item {
-                        LazyRow(
-                            contentPadding        = PaddingValues(horizontal = 20.dp),
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            items(section.items) { item ->
-                                PremiumYTItemCard(item) {
-                                    when (item) {
-                                        is SongItem  -> playerConnection?.playQueue(YouTubeQueue.radio(item.toMediaMetadata()))
-                                        is AlbumItem -> navController.navigate(Routes.Album(item.browseId))
-                                        is ArtistItem -> navController.navigate(Routes.Artist(item.id))
-                                        else         -> {}
+                // ── Secciones personalizadas "Porque te gusta [Artista]" ──────────────────
+                if (homePage != null) {
+                    homePage!!.sections.forEach { section ->
+                        item { SectionTitle(section.title) }
+                        item {
+                            LazyRow(
+                                contentPadding        = PaddingValues(horizontal = 20.dp),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                items(section.items) { item ->
+                                    PremiumYTItemCard(item) {
+                                        when (item) {
+                                            is SongItem  -> playerConnection?.playQueue(YouTubeQueue.radio(item.toMediaMetadata()))
+                                            is AlbumItem -> navController.navigate(Routes.Album(item.browseId))
+                                            is ArtistItem -> navController.navigate(Routes.Artist(item.id))
+                                            else         -> {}
+                                        }
                                     }
                                 }
+                            }
+                        }
+                    }
+                } else if (!isLoading) {
+                    // ── Estado vacío: sin favoritos configurados ────────────────────────
+                    item {
+                        Box(
+                            modifier = Modifier.fillParentMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.MusicNote,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(64.dp)
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                Text(
+                                    "Explora música",
+                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "Busca artistas y canciones para personalizar tu inicio",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
                             }
                         }
                     }

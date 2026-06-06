@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
@@ -112,8 +113,8 @@ fun SearchScreen(
             )
         }
 
-        // ── Filtros (Chips) cuando hay resultados ──────────────────────────
-        if (hasResults || isLoading) {
+        // ── Filtros (Chips) SIEMPRE visibles al escribir ────────────────
+        if (query.isNotEmpty()) {
             androidx.compose.foundation.lazy.LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -359,32 +360,54 @@ fun RecentSearchRow(text: String, onClick: () -> Unit, onDelete: () -> Unit) {
 
 @Composable
 fun ExploreGenreGrid(onGenreClick: (String) -> Unit) {
+    data class GenreCard(val name: String, val subLabel: String, val colorTop: Color, val colorBottom: Color)
     val genres = listOf(
-        "Pop" to Color(0xFF3B82F6), "Rock" to Color(0xFFEF4444),
-        "Hip Hop" to Color(0xFFF59E0B), "Electronic" to Color(0xFF06B6D4),
-        "Reggaeton" to Color(0xFF10B981), "Latin" to Color(0xFFD946EF),
-        "R&B" to Color(0xFF8B5CF6), "Jazz" to Color(0xFFEC4899),
-        "Metal" to Color(0xFF6B7280), "Clásica" to Color(0xFF3B82F6),
+        GenreCard("Pop",       "Tendencias",   Color(0xFF6C63FF), Color(0xFF3B2F8A)),
+        GenreCard("Hip Hop",   "Cultura urbana",Color(0xFFFF6B35), Color(0xFF8A2B00)),
+        GenreCard("Reggaeton", "Latin trap",   Color(0xFF00C9A7), Color(0xFF007A63)),
+        GenreCard("Rock",      "Distorsión",   Color(0xFFE94560), Color(0xFF7A0020)),
+        GenreCard("R&B",       "Soul moderno", Color(0xFFB06EFF), Color(0xFF5A0099)),
+        GenreCard("Latin",     "Fusión latina",Color(0xFFFF9A3C), Color(0xFF8A4100)),
+        GenreCard("Electronic","Beats & synth",Color(0xFF00D2FF), Color(0xFF003D99)),
+        GenreCard("Jazz",      "Improvisación",Color(0xFFFFD166), Color(0xFF7A5C00)),
+        GenreCard("Clásica",   "Orquestal",    Color(0xFF88BDBC), Color(0xFF2E5F5E)),
+        GenreCard("Metal",     "Intensidad",   Color(0xFF9E9E9E), Color(0xFF212121)),
     )
-    Column(Modifier.padding(horizontal = 16.dp)) {
-        genres.chunked(2).forEach { row ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), Arrangement.spacedBy(10.dp)) {
-                row.forEach { (name, color) ->
-                    Box(
-                        Modifier.weight(1f).height(68.dp).clip(RoundedCornerShape(14.dp))
-                            .background(Brush.linearGradient(listOf(color.copy(0.85f), color.copy(0.45f))))
-                            .clickable { onGenreClick(name) },
-                        Alignment.BottomStart
-                    ) {
-                        Text(name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White, modifier = Modifier.padding(10.dp))
-                    }
+    androidx.compose.foundation.lazy.LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(genres) { genre ->
+            Box(
+                modifier = Modifier
+                    .width(140.dp)
+                    .height(88.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(genre.colorTop, genre.colorBottom)
+                        )
+                    )
+                    .clickable { onGenreClick(genre.name) }
+                    .padding(14.dp)
+            ) {
+                Column(modifier = Modifier.align(Alignment.BottomStart)) {
+                    Text(
+                        text = genre.name,
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.ExtraBold),
+                        color = Color.White,
+                        letterSpacing = (-0.3).sp
+                    )
+                    Text(
+                        text = genre.subLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.75f)
+                    )
                 }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
             }
         }
-        Spacer(Modifier.height(12.dp))
     }
+    Spacer(Modifier.height(12.dp))
 }
 
 // Compatibilidad con HomeScreen

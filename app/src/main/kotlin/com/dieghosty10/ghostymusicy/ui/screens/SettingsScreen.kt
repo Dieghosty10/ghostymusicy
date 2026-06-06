@@ -194,17 +194,6 @@ fun SettingsScreen() {
                 // Additional rows removed
             }
         }
-
-        // ── SECCIÓN: PROXIMAMENTE ────────────────────────────────────────
-        item { SettingsSectionHeader("Próximamente") }
-
-        item {
-            SettingsCard {
-                ComingSoonRow(icon = Icons.Rounded.DownloadForOffline, title = "Descargas")
-                ComingSoonRow(icon = Icons.Rounded.LibraryMusic, title = "Biblioteca personal")
-                ComingSoonRow(icon = Icons.Rounded.Lyrics, title = "Letras sincronizadas")
-            }
-        }
     }
 }
 
@@ -277,18 +266,4 @@ private fun SettingsInfoRow(icon: ImageVector, title: String, subtitle: String) 
     }
 }
 
-@Composable
-private fun ComingSoonRow(icon: ImageVector, title: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-        Text(title, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-        Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-            Text("Pronto", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp), fontSize = 10.sp)
-        }
-    }
-}
+

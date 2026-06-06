@@ -1,6 +1,7 @@
 package com.dieghosty10.ghostymusicy.ui.screens
 
 import android.text.format.DateUtils
+import androidx.core.net.toUri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -60,11 +61,22 @@ fun PlayerScreen() {
     var duration by remember { mutableStateOf(0L) }
     var dominantColor by remember { mutableStateOf<Color?>(null) }
     var isLiked by remember { mutableStateOf(false) }
+    var downloadState by remember { mutableStateOf<Int?>(null) } // null=not downloaded, 0=downloading, 1=downloaded
 
     var showLyrics by remember { mutableStateOf(false) }
     val lyricsViewModel = hiltViewModel<LyricsViewModel>()
     val lyrics by lyricsViewModel.lyrics.collectAsState()
     val isLyricsLoading by lyricsViewModel.isLoading.collectAsState()
+
+    // Auto-fetch lyrics when song changes
+    LaunchedEffect(mediaMetadata?.id) {
+        mediaMetadata?.id?.let { videoId ->
+            lyricsViewModel.fetchLyrics(videoId)
+        }
+    }
+
+    // Observe download state
+    val context = LocalContext.current
 
     val coverScale by animateFloatAsState(
         targetValue = if (isPlaying) 1f else 0.88f,
@@ -384,27 +396,41 @@ fun PlayerScreen() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Descargar
+                val isDownloaded = downloadState == 1
+                val isDownloading = downloadState == 0
                 IconButton(onClick = {
-                    // Aquí llamaremos al ExoDownloadService en la siguiente fase
+                    val videoId = mediaMetadata?.id ?: return@IconButton
+                    val title = mediaMetadata?.title ?: "Song"
+                    val downloadRequest = androidx.media3.exoplayer.offline.DownloadRequest
+                        .Builder(videoId, videoId.toUri())
+                        .setCustomCacheKey(videoId)
+                        .setData(title.toByteArray())
+                        .build()
+                    androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
+                        context,
+                        com.dieghosty10.ghostymusicy.playback.ExoDownloadService::class.java,
+                        downloadRequest,
+                        false
+                    )
+                    downloadState = 0
                 }) {
                     Icon(
-                        Icons.Rounded.Download,
+                        if (isDownloaded) Icons.Rounded.DownloadDone
+                        else if (isDownloading) Icons.Rounded.Downloading
+                        else Icons.Rounded.Download,
                         contentDescription = "Descargar",
-                        tint = Color.White.copy(alpha = 0.6f),
+                        tint = if (isDownloaded) (dominantColor ?: MaterialTheme.colorScheme.primary)
+                               else Color.White.copy(alpha = 0.6f),
                         modifier = Modifier.size(24.dp)
                     )
                 }
                 // Letras
-                IconButton(onClick = { 
-                    showLyrics = true
-                    mediaMetadata?.id?.let { videoId ->
-                        lyricsViewModel.fetchLyrics(videoId)
-                    }
-                }) {
+                IconButton(onClick = { showLyrics = true }) {
                     Icon(
                         Icons.Rounded.Lyrics,
                         contentDescription = "Letra",
-                        tint = Color.White.copy(alpha = 0.6f),
+                        tint = if (showLyrics) (dominantColor ?: MaterialTheme.colorScheme.primary)
+                               else Color.White.copy(alpha = 0.6f),
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -442,36 +468,61 @@ fun PlayerScreen() {
     if (showLyrics) {
         ModalBottomSheet(
             onDismissRequest = { showLyrics = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            scrimColor = Color.Black.copy(alpha = 0.5f)
+            containerColor = dominantColor?.copy(alpha = 0.15f)?.let {
+                androidx.compose.ui.graphics.lerp(Color(0xFF09090B), it, 0.6f)
+            } ?: Color(0xFF141414),
+            scrimColor = Color.Black.copy(alpha = 0.6f),
+            dragHandle = {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 12.dp, bottom = 8.dp)
+                        .width(36.dp)
+                        .height(4.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.3f))
+                )
+            }
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                    .padding(horizontal = 28.dp)
+                    .padding(bottom = 48.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Letra",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = mediaMetadata?.title ?: "Letra",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.5).sp
+                    ),
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = mediaMetadata?.artists?.joinToString { it.name } ?: "",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.6f)
+                )
+                Spacer(Modifier.height(24.dp))
                 if (isLyricsLoading) {
                     Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = dominantColor ?: MaterialTheme.colorScheme.primary)
                     }
                 } else {
                     Text(
-                        text = lyrics ?: "No disponible",
-                        style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 28.sp),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        text = lyrics ?: "No hay letra disponible para esta canción",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            lineHeight = 32.sp,
+                            letterSpacing = 0.sp
+                        ),
+                        color = if (lyrics != null) Color.White else Color.White.copy(alpha = 0.5f),
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f, fill = false)
                             .verticalScroll(rememberScrollState())
-                            .padding(bottom = 32.dp)
                     )
                 }
             }

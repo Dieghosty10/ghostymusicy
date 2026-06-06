@@ -7,6 +7,9 @@ import com.dieghosty10.ghostymusicy.db.entities.EventWithSong
 import com.dieghosty10.ghostymusicy.innertube.YouTube
 import com.dieghosty10.ghostymusicy.innertube.pages.HomePage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -44,41 +47,43 @@ class HomeViewModel @Inject constructor(
                 )
                 if (!favoritesStr.isNullOrEmpty()) {
                     val favList = favoritesStr.split(",")
-                    val randomFavs = favList.shuffled().take(2) // Tomar 2 artistas al azar
-                    for (favId in randomFavs) {
-                        try {
-                            val artistPage = YouTube.artist(favId).getOrNull() ?: continue
-                            val songsSection = artistPage.sections?.find { it.title.contains("Canciones", ignoreCase = true) || it.title.contains("Songs", ignoreCase = true) }
-                            val albumsSection = artistPage.sections?.find { it.title.contains("Álbum", ignoreCase = true) || it.title.contains("Album", ignoreCase = true) }
-                            
-                            val items = mutableListOf<com.dieghosty10.ghostymusicy.innertube.models.YTItem>()
-                            songsSection?.items?.take(5)?.let { items.addAll(it) }
-                            albumsSection?.items?.take(5)?.let { items.addAll(it) }
-                            
-                            if (items.isNotEmpty()) {
-                                customSections.add(
-                                    HomePage.Section(
-                                        title = "Porque te gusta ${artistPage.artist.title}",
-                                        label = null,
-                                        thumbnail = null,
-                                        endpoint = null,
-                                        items = items.shuffled()
-                                    )
-                                )
+                    val randomFavs = favList.shuffled().take(3) // Tomar 3 artistas al azar
+                    val sections = coroutineScope {
+                        randomFavs.map { favId ->
+                            async {
+                                try {
+                                    val artistPage = YouTube.artist(favId).getOrNull() ?: return@async null
+                                    val songsSection = artistPage.sections?.find { it.title.contains("Canciones", ignoreCase = true) || it.title.contains("Songs", ignoreCase = true) }
+                                    val albumsSection = artistPage.sections?.find { it.title.contains("Álbum", ignoreCase = true) || it.title.contains("Album", ignoreCase = true) }
+
+                                    val items = mutableListOf<com.dieghosty10.ghostymusicy.innertube.models.YTItem>()
+                                    songsSection?.items?.take(5)?.let { items.addAll(it) }
+                                    albumsSection?.items?.take(5)?.let { items.addAll(it) }
+
+                                    if (items.isNotEmpty()) {
+                                        HomePage.Section(
+                                            title = "Porque te gusta ${artistPage.artist.title}",
+                                            label = null,
+                                            thumbnail = null,
+                                            endpoint = null,
+                                            items = items.shuffled()
+                                        )
+                                    } else null
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    null
+                                }
                             }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
+                        }.awaitAll().filterNotNull()
                     }
+                    customSections.addAll(sections)
                 }
-            
-            YouTube.home().onSuccess { homePage -> 
-                val finalSections = customSections + homePage.sections
-                _homePage.value = homePage.copy(sections = finalSections)
-            }.onFailure {
-                if (customSections.isNotEmpty()) {
-                    _homePage.value = HomePage(sections = customSections, chips = null, continuation = null)
-                }
+
+            if (customSections.isNotEmpty()) {
+                _homePage.value = HomePage(sections = customSections, chips = null, continuation = null)
+            } else {
+                // Sin favoritos configurados → UI mostrará estado vacío
+                _homePage.value = null
             }
             _isLoading.value = false
         }
