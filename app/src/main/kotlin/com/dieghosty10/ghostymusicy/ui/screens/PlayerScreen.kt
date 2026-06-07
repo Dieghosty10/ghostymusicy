@@ -452,6 +452,20 @@ fun PlayerScreen(navController: androidx.navigation.NavHostController) {
                         modifier = Modifier.size(24.dp)
                     )
                 }
+                // Guardar
+                IconButton(onClick = {
+                    playerConnection.toggleLike()
+                    isLiked = !isLiked
+                    android.widget.Toast.makeText(context, if (isLiked) "Añadido a la biblioteca" else "Removido de la biblioteca", android.widget.Toast.LENGTH_SHORT).show()
+                }) {
+                    Icon(
+                        Icons.Rounded.LibraryAdd,
+                        contentDescription = "Guardar",
+                        tint = if (isLiked) (dominantColor ?: MaterialTheme.colorScheme.primary)
+                               else Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
                 // Menú de opciones (3 puntos)
                 Box {
                     IconButton(onClick = { showMenu = true }) {

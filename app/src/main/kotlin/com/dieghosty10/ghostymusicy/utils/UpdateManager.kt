@@ -9,8 +9,14 @@ import android.net.Uri
 import android.os.Environment
 import android.widget.Toast
 import java.io.File
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 object UpdateManager {
+    val downloadProgress = MutableStateFlow<Float?>(null)
 
     fun downloadAndInstallUpdate(context: Context, url: String, versionTag: String) {
         val fileName = "GhostyMusic-$versionTag.apk"
@@ -25,6 +31,47 @@ object UpdateManager {
 
         val downloadId = downloadManager.enqueue(request)
         Toast.makeText(context, "Descarga iniciada...", Toast.LENGTH_SHORT).show()
+
+        downloadProgress.value = 0f
+        CoroutineScope(Dispatchers.IO).launch {
+            var downloading = true
+            while (downloading) {
+                val query = DownloadManager.Query().setFilterById(downloadId)
+                val cursor = downloadManager.query(query)
+                if (cursor != null && cursor.moveToFirst()) {
+                    val bytesDownloadedIndex = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                    val bytesTotalIndex = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                    val statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+
+                    if (bytesDownloadedIndex >= 0 && bytesTotalIndex >= 0 && statusIndex >= 0) {
+                        val bytesDownloaded = cursor.getLong(bytesDownloadedIndex)
+                        val bytesTotal = cursor.getLong(bytesTotalIndex)
+                        val status = cursor.getInt(statusIndex)
+
+                        if (status == DownloadManager.STATUS_SUCCESSFUL || status == DownloadManager.STATUS_FAILED) {
+                            downloading = false
+                            if (status == DownloadManager.STATUS_FAILED) {
+                                downloadProgress.value = null
+                            } else {
+                                downloadProgress.value = 1f
+                            }
+                        } else {
+                            if (bytesTotal > 0) {
+                                downloadProgress.value = bytesDownloaded.toFloat() / bytesTotal.toFloat()
+                            }
+                        }
+                    } else {
+                        downloading = false
+                        downloadProgress.value = null
+                    }
+                } else {
+                    downloading = false
+                    downloadProgress.value = null
+                }
+                cursor?.close()
+                delay(100)
+            }
+        }
 
         val onComplete = object : BroadcastReceiver() {
             override fun onReceive(ctx: Context, intent: Intent) {

@@ -106,10 +106,13 @@ fun HomeScreen(
                             }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            IconButton(onClick = { navController.navigate("library") }) {
+                            IconButton(onClick = { navController.navigate(Routes.DOWNLOADS) }) {
+                                Icon(Icons.Rounded.DownloadDone, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            IconButton(onClick = { navController.navigate(Routes.LIBRARY) }) {
                                 Icon(Icons.Rounded.LibraryMusic, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            IconButton(onClick = { navController.navigate("settings") }) {
+                            IconButton(onClick = { navController.navigate(Routes.SETTINGS) }) {
                                 Icon(Icons.Rounded.Settings, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }

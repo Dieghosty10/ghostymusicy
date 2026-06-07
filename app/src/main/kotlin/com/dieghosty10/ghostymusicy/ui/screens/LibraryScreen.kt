@@ -28,6 +28,10 @@ import com.dieghosty10.ghostymusicy.db.entities.Artist
 import com.dieghosty10.ghostymusicy.db.entities.Playlist
 import com.dieghosty10.ghostymusicy.db.entities.Song
 import com.dieghosty10.ghostymusicy.viewmodels.LibraryViewModel
+import androidx.compose.foundation.lazy.itemsIndexed
+import com.dieghosty10.ghostymusicy.playback.queues.ListQueue
+import com.dieghosty10.ghostymusicy.extensions.toMediaItem
+import com.dieghosty10.ghostymusicy.ui.components.EmptyStateMessage
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -40,10 +44,9 @@ fun LibraryScreen(
     val likedAlbums by viewModel.likedAlbums.collectAsState()
     val likedArtists by viewModel.likedArtists.collectAsState()
     val playerConnection = LocalPlayerConnection.current
-    val downloadsMap by playerConnection?.downloads?.collectAsState(initial = emptyMap()) ?: remember { mutableStateOf(emptyMap()) }
 
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Canciones", "Playlists", "Álbumes", "Descargas")
+    val tabs = listOf("Canciones", "Playlists", "Álbumes")
 
     Scaffold(
         topBar = {
@@ -92,9 +95,13 @@ fun LibraryScreen(
                         if (likedSongs.isEmpty()) {
                             item { EmptyStateMessage("No hay canciones en tu biblioteca") }
                         } else {
-                            items(likedSongs) { song ->
+                            itemsIndexed(likedSongs) { index, song ->
                                 LibrarySongRow(song) {
-                                    // TODO: Play from liked songs queue
+                                    playerConnection?.playQueue(ListQueue(
+                                        title = "Canciones de biblioteca",
+                                        items = likedSongs.map { it.toMediaItem() },
+                                        startIndex = index
+                                    ))
                                 }
                             }
                         }
@@ -121,52 +128,9 @@ fun LibraryScreen(
                             }
                         }
                     }
-                    3 -> { // Descargas
-                        val downloadsList = downloadsMap.values.toList()
-                        if (downloadsList.isEmpty()) {
-                            item { EmptyStateMessage("No hay descargas") }
-                        } else {
-                            items(downloadsList) { download ->
-                                val title = try { String(download.request.data) } catch (e: Exception) { "Desconocido" }
-                                val isCompleted = download.state == androidx.media3.exoplayer.offline.Download.STATE_COMPLETED
-                                val isDownloading = download.state == androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING
-                                ListItem(
-                                    headlineContent = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                                    supportingContent = { Text(if (isCompleted) "Descargado" else if (isDownloading) "Descargando... ${download.percentDownloaded.toInt()}%" else "En espera") },
-                                    leadingContent = {
-                                        Box(
-                                            modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = if (isCompleted) Icons.Rounded.Check else if (isDownloading) Icons.Rounded.Downloading else Icons.Rounded.Download,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                    },
-                                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                                )
-                            }
-                        }
-                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun EmptyStateMessage(message: String) {
-    Box(
-        modifier = Modifier.fillMaxWidth().padding(40.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 

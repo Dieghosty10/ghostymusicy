@@ -107,6 +107,9 @@ fun MainNavGraph(
         composable(Routes.LIBRARY) {
             com.dieghosty10.ghostymusicy.ui.screens.LibraryScreen(navController = navController)
         }
+        composable(Routes.DOWNLOADS) {
+            com.dieghosty10.ghostymusicy.ui.screens.DownloadsScreen(navController = navController)
+        }
         composable("album/{albumId}") {
             com.dieghosty10.ghostymusicy.ui.screens.AlbumScreen(navController = navController)
         }
