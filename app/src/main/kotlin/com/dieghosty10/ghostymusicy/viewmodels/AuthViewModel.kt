@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +20,7 @@ class AuthViewModel @Inject constructor() : ViewModel() {
 
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
+    private var userListener: ListenerRegistration? = null
 
     private val _currentUser = MutableStateFlow<FirebaseUser?>(auth.currentUser)
     val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
@@ -44,18 +47,36 @@ class AuthViewModel @Inject constructor() : ViewModel() {
     fun checkAuthState() {
         _currentUser.value = auth.currentUser
         _isEmailVerified.value = auth.currentUser?.isEmailVerified == true
+        
+        userListener?.remove()
+        userListener = null
+        
         auth.currentUser?.let { user ->
             viewModelScope.launch {
                 try {
                     user.reload().await()
                     _isEmailVerified.value = user.isEmailVerified
-                    val doc = firestore.collection("users").document(user.uid).get().await()
-                    _userRole.value = doc.getString("role") ?: "user"
-                    _isSuspended.value = doc.getBoolean("isSuspended") ?: false
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
             }
+            
+            userListener = firestore.collection("users").document(user.uid)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) return@addSnapshotListener
+                    
+                    if (snapshot != null && snapshot.exists()) {
+                        _userRole.value = snapshot.getString("role") ?: "user"
+                        val suspended = snapshot.getBoolean("isSuspended") ?: false
+                        _isSuspended.value = suspended
+                        if (suspended) {
+                            logout()
+                        }
+                    } else {
+                        // User profile was deleted
+                        logout()
+                    }
+                }
         }
     }
 
@@ -113,11 +134,53 @@ class AuthViewModel @Inject constructor() : ViewModel() {
         }
     }
 
+    fun loginWithGoogle(idToken: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+            try {
+                val credential = GoogleAuthProvider.getCredential(idToken, null)
+                val result = auth.signInWithCredential(credential).await()
+                result.user?.let { user ->
+                    // Check if user exists in Firestore
+                    val doc = firestore.collection("users").document(user.uid).get().await()
+                    if (!doc.exists()) {
+                        // Create profile for new Google user
+                        val userData = hashMapOf(
+                            "email" to (user.email ?: ""),
+                            "role" to "user",
+                            "isSuspended" to false,
+                            "createdAt" to System.currentTimeMillis()
+                        )
+                        firestore.collection("users").document(user.uid).set(userData).await()
+                    } else {
+                        val suspended = doc.getBoolean("isSuspended") ?: false
+                        if (suspended) {
+                            _error.value = "Tu cuenta está suspendida."
+                            auth.signOut()
+                            return@launch
+                        }
+                    }
+                    checkAuthState()
+                    onSuccess()
+                } ?: run {
+                    _error.value = "Error al autenticar con Google."
+                }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage ?: "Error en Google Sign-In"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun sendVerificationEmail() {
         auth.currentUser?.sendEmailVerification()
     }
 
     fun logout() {
+        userListener?.remove()
+        userListener = null
         auth.signOut()
         _currentUser.value = null
     }

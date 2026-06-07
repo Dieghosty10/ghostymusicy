@@ -23,6 +23,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.dieghosty10.ghostymusicy.viewmodels.AuthViewModel
+import com.dieghosty10.ghostymusicy.utils.GoogleAuthHelper
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +40,9 @@ fun LoginScreen(
 
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     val backgroundBrush = Brush.verticalGradient(
         colors = listOf(
@@ -165,6 +171,37 @@ fun LoginScreen(
                 } else {
                     Text("Iniciar sesión", fontWeight = FontWeight.Bold)
                 }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            
+            OutlinedButton(
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            val idToken = GoogleAuthHelper.signIn(context)
+                            if (idToken != null) {
+                                viewModel.loginWithGoogle(idToken, onNavigateToHome)
+                            }
+                        } catch (e: Exception) {
+                            // Handled inside helper or by showing error (for now simple toast or let viewmodel handle)
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                enabled = !isLoading
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.google),
+                    contentDescription = "Google",
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Continuar con Google", fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.height(24.dp))

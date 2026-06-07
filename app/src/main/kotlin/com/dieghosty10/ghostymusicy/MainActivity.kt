@@ -38,6 +38,8 @@ import com.dieghosty10.ghostymusicy.ui.navigation.Routes
 import com.dieghosty10.ghostymusicy.ui.screens.MiniPlayer
 import com.dieghosty10.ghostymusicy.ui.theme.ghostymusicyTheme
 import com.dieghosty10.ghostymusicy.utils.PreferenceStore
+import com.dieghosty10.ghostymusicy.utils.dataStore
+import com.dieghosty10.ghostymusicy.utils.getAsync
 import com.dieghosty10.ghostymusicy.viewmodels.UpdateViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import dev.chrisbanes.haze.HazeState
@@ -118,7 +120,7 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(Unit) {
                     val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
                     val user = auth.currentUser
-                    val isFirstTimeValue = com.dieghosty10.ghostymusicy.utils.PreferenceStore.get(com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey) ?: true
+                    val isFirstTimeValue = this@MainActivity.dataStore.getAsync(com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey) ?: true
                     
                     startDest = when {
                         user == null -> Routes.LOGIN

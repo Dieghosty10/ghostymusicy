@@ -23,6 +23,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.dieghosty10.ghostymusicy.viewmodels.AuthViewModel
+import com.dieghosty10.ghostymusicy.utils.GoogleAuthHelper
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +41,9 @@ fun RegisterScreen(
 
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     val backgroundBrush = Brush.verticalGradient(
         colors = listOf(
@@ -212,6 +218,38 @@ fun RegisterScreen(
                 } else {
                     Text("Regístrate ahora", fontWeight = FontWeight.Bold)
                 }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            val idToken = GoogleAuthHelper.signIn(context)
+                            if (idToken != null) {
+                                // For registration, we can just login, the viewmodel will create the user doc if it doesn't exist
+                                viewModel.loginWithGoogle(idToken, onNavigateToVerification)
+                            }
+                        } catch (e: Exception) {
+                            // Let the viewmodel handle error later or toast
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                enabled = !isLoading
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.google),
+                    contentDescription = "Google",
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.tertiary
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Regístrate con Google", fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.height(24.dp))
