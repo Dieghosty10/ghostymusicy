@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.dieghosty10.ghostymusicy.viewmodels.AppUpdateInfo
+import com.dieghosty10.ghostymusicy.utils.UpdateManager
 
 @Composable
 fun UpdateDialog(
@@ -83,8 +84,7 @@ fun UpdateDialog(
 
                 Button(
                     onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.downloadUrl))
-                        context.startActivity(intent)
+                        UpdateManager.downloadAndInstallUpdate(context, updateInfo.downloadUrl, updateInfo.latestVersionName)
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(12.dp)

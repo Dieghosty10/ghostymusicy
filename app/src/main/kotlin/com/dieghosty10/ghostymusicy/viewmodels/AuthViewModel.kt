@@ -14,9 +14,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+import com.dieghosty10.ghostymusicy.utils.dataStore
+import com.dieghosty10.ghostymusicy.utils.PreferenceStore
+import com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey
+import com.dieghosty10.ghostymusicy.constants.SelectedFavoriteArtistsKey
 
 @HiltViewModel
-class AuthViewModel @Inject constructor() : ViewModel() {
+class AuthViewModel @Inject constructor(
+    @ApplicationContext private val context: Context
+) : ViewModel() {
 
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
@@ -71,6 +79,18 @@ class AuthViewModel @Inject constructor() : ViewModel() {
                         _isSuspended.value = suspended
                         if (suspended) {
                             logout()
+                        } else {
+                            val onboardingCompleted = snapshot.getBoolean("onboardingCompleted") ?: false
+                            val favoriteArtists = snapshot.get("favoriteArtists") as? List<String>
+                            
+                            if (onboardingCompleted) {
+                                PreferenceStore.launchEdit(context.dataStore) {
+                                    this[IsFirstTimeAppLaunchKey] = false
+                                    if (favoriteArtists != null) {
+                                        this[SelectedFavoriteArtistsKey] = favoriteArtists.joinToString(",")
+                                    }
+                                }
+                            }
                         }
                     } else {
                         // User profile was deleted

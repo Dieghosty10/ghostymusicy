@@ -48,6 +48,9 @@ class SearchViewModel @Inject constructor(
     private val _recentSearches = MutableStateFlow<List<String>>(emptyList())
     val recentSearches: StateFlow<List<String>> = _recentSearches.asStateFlow()
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
     private var suggestJob: Job? = null
     private var searchJob: Job? = null
 
@@ -82,6 +85,7 @@ class SearchViewModel @Inject constructor(
         _query.value = queryText
         _suggestions.value = null
         _results.value = emptyMap()
+        _error.value = null
         addToHistory(queryText)
 
         // Cargar el tab activo primero, los demás en paralelo
@@ -102,8 +106,13 @@ class SearchViewModel @Inject constructor(
     }
 
     private suspend fun loadTabSuspend(tab: SearchTab, q: String) {
-        YouTube.search(q, tab.filter).onSuccess { result ->
-            _results.value = _results.value + (tab to result)
+        val result = YouTube.search(q, tab.filter)
+        if (result.isSuccess) {
+            _results.value = _results.value + (tab to result.getOrThrow())
+        } else {
+            val exception = result.exceptionOrNull()
+            exception?.printStackTrace()
+            _error.value = exception?.message ?: "Error al buscar"
         }
     }
 

@@ -113,4 +113,24 @@ class OnboardingViewModel @Inject constructor() : ViewModel() {
             }
         }
     }
+
+    fun saveOnboardingToFirebase(onComplete: () -> Unit) {
+        val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+        val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+        val uid = auth.currentUser?.uid
+        
+        if (uid != null) {
+            val selectedList = _selectedArtists.value.toList()
+            firestore.collection("users").document(uid).update(
+                mapOf(
+                    "favoriteArtists" to selectedList,
+                    "onboardingCompleted" to true
+                )
+            ).addOnCompleteListener {
+                onComplete()
+            }
+        } else {
+            onComplete()
+        }
+    }
 }

@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,6 +56,7 @@ fun SearchScreen(
     val isLoading      by viewModel.isLoading.collectAsState()
     val activeTab      by viewModel.activeTab.collectAsState()
     val recentSearches by viewModel.recentSearches.collectAsState()
+    val error          by viewModel.error.collectAsState()
 
     val playerConnection = LocalPlayerConnection.current
     val focusRequester   = remember { FocusRequester() }
@@ -159,6 +161,47 @@ fun SearchScreen(
             isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            }
+
+            // Error
+            error != null -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(32.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(120.dp)
+                                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Rounded.ErrorOutline,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(64.dp)
+                            )
+                        }
+                        Spacer(Modifier.height(24.dp))
+                        Text(
+                            "Ocurrió un error",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            error ?: "Error desconocido",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(24.dp))
+                        Button(onClick = { viewModel.performSearch(query) }) {
+                            Text("Reintentar")
+                        }
+                    }
                 }
             }
 

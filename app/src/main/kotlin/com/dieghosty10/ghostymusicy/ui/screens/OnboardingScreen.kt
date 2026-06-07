@@ -131,16 +131,22 @@ fun OnboardingScreen(
 
         // Botón Continuar flotante
         AnimatedVisibility(
-            visible = selectedArtists.size >= 5,
+            visible = selectedArtists.size >= 3,
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 32.dp)
         ) {
+            var isSaving by remember { mutableStateOf(false) }
             Button(
                 onClick = {
+                    isSaving = true
                     favoriteArtistsPref = selectedArtists.joinToString(",")
                     isFirstTime = false
-                    onFinish()
+                    viewModel.saveOnboardingToFirebase {
+                        isSaving = false
+                        onFinish()
+                    }
                 },
+                enabled = !isSaving,
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
                     .height(56.dp),
@@ -150,10 +156,14 @@ fun OnboardingScreen(
                 ),
                 shape = CircleShape
             ) {
-                Text(
-                    "Continuar",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Text("Continuar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
