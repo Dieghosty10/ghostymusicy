@@ -26,6 +26,7 @@ import com.dieghosty10.ghostymusicy.viewmodels.AuthViewModel
 import com.dieghosty10.ghostymusicy.utils.GoogleAuthHelper
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
+import android.widget.Toast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -232,7 +233,7 @@ fun RegisterScreen(
                                 viewModel.loginWithGoogle(idToken, onNavigateToVerification)
                             }
                         } catch (e: Exception) {
-                            // Let the viewmodel handle error later or toast
+                            Toast.makeText(context, e.localizedMessage ?: "Error al registrar con Google", Toast.LENGTH_LONG).show()
                         }
                     }
                 },

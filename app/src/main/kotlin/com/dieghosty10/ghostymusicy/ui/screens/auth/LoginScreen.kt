@@ -26,6 +26,7 @@ import com.dieghosty10.ghostymusicy.viewmodels.AuthViewModel
 import com.dieghosty10.ghostymusicy.utils.GoogleAuthHelper
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
+import android.widget.Toast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -184,7 +185,7 @@ fun LoginScreen(
                                 viewModel.loginWithGoogle(idToken, onNavigateToHome)
                             }
                         } catch (e: Exception) {
-                            // Handled inside helper or by showing error (for now simple toast or let viewmodel handle)
+                            Toast.makeText(context, e.localizedMessage ?: "Error al iniciar con Google", Toast.LENGTH_LONG).show()
                         }
                     }
                 },
