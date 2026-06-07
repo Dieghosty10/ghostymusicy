@@ -35,6 +35,7 @@ fun AdminScreen(
     val successMessage by viewModel.successMessage.collectAsState()
 
     var showNotificationDialog by remember { mutableStateOf(false) }
+    var showUpdateConfigDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(error, successMessage) {
         // Simple delay to clear messages could be done here or handled by Snackbar
@@ -54,6 +55,9 @@ fun AdminScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showUpdateConfigDialog = true }) {
+                        Icon(Icons.Rounded.SystemUpdate, contentDescription = "Configurar Actualización")
+                    }
                     IconButton(onClick = { showNotificationDialog = true }) {
                         Icon(Icons.Rounded.NotificationsActive, contentDescription = "Enviar Notificación Global")
                     }
@@ -125,6 +129,61 @@ fun AdminScreen(
                     }
                 }
             }
+        }
+
+        if (showUpdateConfigDialog) {
+            var vCode by remember { mutableStateOf("") }
+            var vName by remember { mutableStateOf("") }
+            var url by remember { mutableStateOf("") }
+            var isForced by remember { mutableStateOf(false) }
+
+            AlertDialog(
+                onDismissRequest = { showUpdateConfigDialog = false },
+                title = { Text("Configurar Actualización") },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = vCode,
+                            onValueChange = { vCode = it },
+                            label = { Text("Version Code (Ej: 20)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = vName,
+                            onValueChange = { vName = it },
+                            label = { Text("Version Name (Ej: 3.0.2)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = url,
+                            onValueChange = { url = it },
+                            label = { Text("URL de Descarga") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = isForced, onCheckedChange = { isForced = it })
+                            Text("Actualización Forzosa")
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        val code = vCode.toIntOrNull() ?: 0
+                        viewModel.updateAppInfo(code, vName, url, isForced)
+                        showUpdateConfigDialog = false
+                    }) {
+                        Text("Guardar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showUpdateConfigDialog = false }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
         }
 
         // Notification Dialog

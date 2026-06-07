@@ -108,4 +108,21 @@ class AdminViewModel @Inject constructor() : ViewModel() {
         _error.value = null
         _successMessage.value = null
     }
+
+    fun updateAppInfo(versionCode: Int, versionName: String, downloadUrl: String, forceUpdate: Boolean) {
+        viewModelScope.launch {
+            try {
+                val data = hashMapOf(
+                    "latestVersionCode" to versionCode,
+                    "latestVersionName" to versionName,
+                    "downloadUrl" to downloadUrl,
+                    "forceUpdate" to forceUpdate
+                )
+                firestore.collection("app_config").document("update_info").set(data).await()
+                _successMessage.value = "Configuración de actualización guardada"
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage ?: "Error al guardar configuración de actualización"
+            }
+        }
+    }
 }

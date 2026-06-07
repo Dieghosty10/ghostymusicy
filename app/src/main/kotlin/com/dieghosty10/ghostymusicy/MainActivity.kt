@@ -25,17 +25,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.lifecycle.lifecycleScope
 import com.dieghosty10.ghostymusicy.db.MusicDatabase
 import com.dieghosty10.ghostymusicy.playback.MusicService
 import com.dieghosty10.ghostymusicy.playback.PlayerConnection
+import com.dieghosty10.ghostymusicy.ui.components.UpdateDialog
 import com.dieghosty10.ghostymusicy.ui.navigation.MainNavGraph
 import com.dieghosty10.ghostymusicy.ui.navigation.Routes
 import com.dieghosty10.ghostymusicy.ui.screens.MiniPlayer
 import com.dieghosty10.ghostymusicy.ui.theme.ghostymusicyTheme
 import com.dieghosty10.ghostymusicy.utils.PreferenceStore
+import com.dieghosty10.ghostymusicy.viewmodels.UpdateViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -86,6 +89,23 @@ class MainActivity : ComponentActivity() {
             ghostymusicyTheme {
                 val navController = rememberNavController()
                 val hazeState     = remember { HazeState() }
+                
+                val updateViewModel: UpdateViewModel = hiltViewModel()
+                val updateInfo by updateViewModel.updateInfo.collectAsState()
+                var showUpdateDialog by remember { mutableStateOf(false) }
+
+                LaunchedEffect(Unit) {
+                    updateViewModel.checkForUpdates()
+                }
+
+                LaunchedEffect(updateInfo) {
+                    updateInfo?.let { info ->
+                        val currentVersionCode = com.dieghosty10.ghostymusicy.BuildConfig.VERSION_CODE
+                        if (info.latestVersionCode > currentVersionCode) {
+                            showUpdateDialog = true
+                        }
+                    }
+                }
 
                 val navItems = listOf(
                     NavItem(Routes.HOME,     Icons.Rounded.Home,     "Inicio"),
@@ -180,6 +200,13 @@ class MainActivity : ComponentActivity() {
                             startDestination = startDest ?: Routes.LOGIN,
                             hazeState     = hazeState,
                             modifier      = Modifier,
+                        )
+                    }
+
+                    if (showUpdateDialog && updateInfo != null) {
+                        UpdateDialog(
+                            updateInfo = updateInfo!!,
+                            onDismiss = { showUpdateDialog = false }
                         )
                     }
                 }

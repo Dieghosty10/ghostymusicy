@@ -64,13 +64,20 @@ class AuthViewModel @Inject constructor() : ViewModel() {
             _isLoading.value = true
             _error.value = null
             try {
-                auth.signInWithEmailAndPassword(email, pass).await()
-                checkAuthState()
-                if (_isSuspended.value) {
-                    _error.value = "Tu cuenta está suspendida."
-                    auth.signOut()
-                } else {
-                    onSuccess()
+                val result = auth.signInWithEmailAndPassword(email, pass).await()
+                result.user?.let { user ->
+                    val doc = firestore.collection("users").document(user.uid).get().await()
+                    val suspended = doc.getBoolean("isSuspended") ?: false
+                    
+                    if (suspended) {
+                        _error.value = "Tu cuenta está suspendida."
+                        auth.signOut()
+                    } else {
+                        checkAuthState()
+                        onSuccess()
+                    }
+                } ?: run {
+                    _error.value = "No se pudo obtener la información del usuario."
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage ?: "Error al iniciar sesión"
