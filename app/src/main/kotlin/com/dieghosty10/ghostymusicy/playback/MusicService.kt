@@ -296,6 +296,8 @@ class MusicService :
         OkHttpClient
             .Builder()
             .proxy(YouTube.streamProxy)
+            .connectionPool(okhttp3.ConnectionPool(10, 5, java.util.concurrent.TimeUnit.MINUTES))
+            .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
             .followRedirects(true)
             .followSslRedirects(true)
             .addInterceptor { chain ->
@@ -630,9 +632,19 @@ class MusicService :
             reportException(e)
         }
 
+        val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                32000, // minBufferMs
+                64000, // maxBufferMs
+                500,   // bufferForPlaybackMs
+                2000   // bufferForPlaybackAfterRebufferMs
+            )
+            .build()
+
         player =
             ExoPlayer
                 .Builder(this)
+                .setLoadControl(loadControl)
                 .setMediaSourceFactory(createMediaSourceFactory())
                 .setRenderersFactory(createRenderersFactory())
                 .setHandleAudioBecomingNoisy(true)
@@ -845,6 +857,7 @@ class MusicService :
                 overlapPlayerFactory = {
                     ExoPlayer
                         .Builder(this)
+                        .setLoadControl(loadControl)
                         .setMediaSourceFactory(createMediaSourceFactory())
                         .setRenderersFactory(createRenderersFactory())
                         .setHandleAudioBecomingNoisy(false)

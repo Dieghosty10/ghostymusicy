@@ -282,33 +282,7 @@ fun SettingsScreen(
             }
         }
 
-        item { Spacer(Modifier.height(24.dp)) }
-
-        item {
-            Button(
-                onClick = {
-                    authViewModel.logout()
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .height(50.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                )
-            ) {
-                Icon(Icons.Rounded.Logout, contentDescription = "Cerrar Sesin", modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Cerrar Sesión", fontWeight = FontWeight.SemiBold)
-            }
-        }
-
-        item { Spacer(Modifier.height(48.dp)) }
+        item { Spacer(Modifier.height(100.dp)) } // Padding bottom
     }
 }
 
