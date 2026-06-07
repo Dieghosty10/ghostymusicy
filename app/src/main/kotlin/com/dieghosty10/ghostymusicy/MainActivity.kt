@@ -101,11 +101,8 @@ class MainActivity : ComponentActivity() {
                 }
 
                 LaunchedEffect(updateInfo) {
-                    updateInfo?.let { info ->
-                        val currentVersionCode = com.dieghosty10.ghostymusicy.BuildConfig.VERSION_CODE
-                        if (info.latestVersionCode > currentVersionCode) {
-                            showUpdateDialog = true
-                        }
+                    if (updateInfo != null) {
+                        showUpdateDialog = true
                     }
                 }
 
