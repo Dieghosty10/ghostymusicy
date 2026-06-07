@@ -266,6 +266,7 @@ class PlayerConnection(
     }
 
     fun getDownload(id: String) = service.downloadUtil.getDownload(id)
+    val downloads = service.downloadUtil.downloads
 
     fun dispose() {
         player.removeListener(this)

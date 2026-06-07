@@ -100,7 +100,7 @@ class HomeViewModel @Inject constructor(
                 )
                 if (!favoritesStr.isNullOrEmpty()) {
                     val favList = favoritesStr.split(",")
-                    val heroArtistId = favList.firstOrNull()
+                    val heroArtistId = favList.randomOrNull()
                     if (heroArtistId != null) {
                         try {
                             _heroArtist.value = YouTube.artist(heroArtistId).getOrNull()

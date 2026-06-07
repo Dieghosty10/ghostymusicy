@@ -124,7 +124,8 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
-                            .height(220.dp),
+                            .height(220.dp)
+                            .clickable { heroArtist!!.artist.id?.let { navController.navigate(Routes.Artist(it)) } },
                         shape = RoundedCornerShape(24.dp),
                         elevation = CardDefaults.cardElevation(8.dp)
                     ) {
@@ -167,12 +168,16 @@ fun HomeScreen(
                                             playerConnection?.playQueue(YouTubeQueue(endpoint))
                                         }
                                     },
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                    shape = RoundedCornerShape(50)
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    ),
+                                    shape = RoundedCornerShape(50),
+                                    modifier = Modifier.height(40.dp)
                                 ) {
                                     Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Reproducir mix", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                                    Text("Reproducir Mix", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
                                 }
                             }
                         }
