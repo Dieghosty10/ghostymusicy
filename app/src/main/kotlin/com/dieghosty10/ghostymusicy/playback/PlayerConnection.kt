@@ -112,11 +112,17 @@ class PlayerConnection(
                     player.setMediaItem(preloaded.toMediaItem())
                     player.prepare()
                     player.play()
-                    // Luego cargar el resto y añadirlo
-                    val status = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { queue.getInitialStatus() }
-                    // Evitar duplicar el preloadItem
-                    val itemsToAdd = status.items.filter { it.mediaId != preloaded.id }
-                    player.addMediaItems(1, itemsToAdd)
+                    
+                    // Luego cargar el resto y añadirlo en background
+                    scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                        delay(250) // Dar prioridad a la resolución de URL de streaming
+                        val status = queue.getInitialStatus()
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            // Evitar duplicar el preloadItem
+                            val itemsToAdd = status.items.filter { it.mediaId != preloaded.id }
+                            player.addMediaItems(1, itemsToAdd)
+                        }
+                    }
                 } else {
                     val status = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { queue.getInitialStatus() }
                     player.setMediaItems(status.items, status.mediaItemIndex, 0)
@@ -124,7 +130,7 @@ class PlayerConnection(
                     player.play()
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                reportException(e)
                 // Error de red o similar, no colapsar la app
                 android.widget.Toast.makeText(service.applicationContext, "No se pudo cargar la cola. Verifica tu conexión.", android.widget.Toast.LENGTH_SHORT).show()
             }
