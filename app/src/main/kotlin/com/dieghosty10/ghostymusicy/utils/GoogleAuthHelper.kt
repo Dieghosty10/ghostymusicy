@@ -14,7 +14,7 @@ import java.util.UUID
 object GoogleAuthHelper {
 
     // IMPORTANT: The user MUST replace this with their actual Web Client ID from Firebase/Google Cloud Console
-    private const val WEB_CLIENT_ID = "YOUR_WEB_CLIENT_ID_HERE"
+    private const val WEB_CLIENT_ID = "876016069673-eggvg2f758aahpv22l7o26creqqgbh1b.apps.googleusercontent.com"
 
     suspend fun signIn(context: Context): String? {
         if (WEB_CLIENT_ID == "YOUR_WEB_CLIENT_ID_HERE") {
