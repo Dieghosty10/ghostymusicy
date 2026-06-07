@@ -23,21 +23,31 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.dieghosty10.ghostymusicy.R
 import com.dieghosty10.ghostymusicy.constants.CustomThemeColorKey
 import com.dieghosty10.ghostymusicy.constants.DarkModeKey
 import com.dieghosty10.ghostymusicy.ui.theme.DarkMode
 import com.dieghosty10.ghostymusicy.ui.theme.GhostyAccent
 import com.dieghosty10.ghostymusicy.ui.theme.accentFromName
+import com.dieghosty10.ghostymusicy.viewmodels.AuthViewModel
+import com.dieghosty10.ghostymusicy.ui.navigation.Routes
 import com.dieghosty10.ghostymusicy.utils.rememberEnumPreference
 import com.dieghosty10.ghostymusicy.utils.rememberPreference
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    navController: NavController,
+    authViewModel: AuthViewModel = hiltViewModel()
+) {
     val darkMode by rememberEnumPreference(DarkModeKey, DarkMode.ON)
     var darkModeState by rememberEnumPreference(DarkModeKey, DarkMode.ON)
 
     val accentName by rememberPreference(CustomThemeColorKey, GhostyAccent.BLUE.name)
     var accentNameState by rememberPreference(CustomThemeColorKey, GhostyAccent.BLUE.name)
+
+    val userRole by authViewModel.userRole.collectAsState()
 
     LazyColumn(
         modifier = Modifier
@@ -209,6 +219,56 @@ fun SettingsScreen() {
                 // Additional rows removed
             }
         }
+
+        if (userRole == "admin") {
+            item { Spacer(Modifier.height(24.dp)) }
+            item {
+                Button(
+                    onClick = { navController.navigate(Routes.ADMIN) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) {
+                    Icon(Icons.Rounded.AdminPanelSettings, contentDescription = "Panel de Administrador", modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Panel de Administrador", fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+
+        item { Spacer(Modifier.height(24.dp)) }
+
+        item {
+            Button(
+                onClick = {
+                    authViewModel.logout()
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                )
+            ) {
+                Icon(Icons.Rounded.Logout, contentDescription = "Cerrar Sesin", modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Cerrar Sesión", fontWeight = FontWeight.SemiBold)
+            }
+        }
+
+        item { Spacer(Modifier.height(48.dp)) }
     }
 }
 

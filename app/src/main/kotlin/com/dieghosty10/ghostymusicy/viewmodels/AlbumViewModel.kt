@@ -10,14 +10,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.firstOrNull
+import java.time.LocalDateTime
 import javax.inject.Inject
 
+import com.dieghosty10.ghostymusicy.db.MusicDatabase
 import com.dieghosty10.ghostymusicy.playback.DownloadUtil
 
 @HiltViewModel
 class AlbumViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    val downloadUtil: DownloadUtil
+    val downloadUtil: DownloadUtil,
+    private val database: MusicDatabase
 ) : ViewModel() {
 
     private val albumId: String = checkNotNull(savedStateHandle["albumId"])
@@ -31,11 +38,34 @@ class AlbumViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private val _isSaved = MutableStateFlow(false)
-    val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
+    val isSaved: StateFlow<Boolean> = database.album(albumId)
+        .map { it?.bookmarkedAt != null }
+        .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
     fun toggleSave() {
-        _isSaved.value = !_isSaved.value
+        val page = _albumPage.value ?: return
+        val currentlySaved = isSaved.value
+        viewModelScope.launch {
+            if (currentlySaved) {
+                val dbAlbum = database.album(albumId).firstOrNull()
+                if (dbAlbum != null) {
+                    database.query {
+                        update(dbAlbum.album.copy(bookmarkedAt = null))
+                    }
+                }
+            } else {
+                database.query {
+                    insert(page)
+                }
+                database.awaitIdle()
+                val dbAlbum = database.album(albumId).firstOrNull()
+                if (dbAlbum != null) {
+                    database.query {
+                        update(dbAlbum.album.copy(bookmarkedAt = LocalDateTime.now()))
+                    }
+                }
+            }
+        }
     }
 
     init {

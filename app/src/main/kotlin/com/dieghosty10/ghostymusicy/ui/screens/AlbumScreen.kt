@@ -64,6 +64,23 @@ fun AlbumScreen(
         }
     }
 
+    val isDownloading = remember(albumPage, downloads) {
+        albumPage?.songs?.isNotEmpty() == true && albumPage!!.songs.any {
+            val state = downloads[it.id]?.state
+            state == androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING || state == androidx.media3.exoplayer.offline.Download.STATE_QUEUED
+        }
+    }
+
+    val downloadProgress = remember(albumPage, downloads) {
+        if (albumPage?.songs?.isNotEmpty() == true) {
+            val total = albumPage!!.songs.size
+            val completed = albumPage!!.songs.count { downloads[it.id]?.state == androidx.media3.exoplayer.offline.Download.STATE_COMPLETED }
+            if (total > 0) completed.toFloat() / total.toFloat() else 0f
+        } else {
+            0f
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -108,6 +125,8 @@ fun AlbumScreen(
                             page = page,
                             isSaved = isSaved,
                             isDownloaded = isDownloaded,
+                            isDownloading = isDownloading,
+                            downloadProgress = downloadProgress,
                             onSave = {
                                 viewModel.toggleSave()
                                 val msg = if (!isSaved) "Álbum Guardado" else "Álbum Eliminado"
@@ -217,6 +236,8 @@ fun AlbumHeader(
     page: com.dieghosty10.ghostymusicy.innertube.pages.AlbumPage,
     isSaved: Boolean,
     isDownloaded: Boolean,
+    isDownloading: Boolean,
+    downloadProgress: Float,
     onSave: () -> Unit,
     onDownload: () -> Unit,
     onPlay: (Int) -> Unit
@@ -313,21 +334,32 @@ fun AlbumHeader(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
                     .clickable { onDownload() }
                     .padding(12.dp)
             ) {
-                Icon(
-                    imageVector = if (isDownloaded) Icons.Rounded.Check else Icons.Rounded.Download,
-                    contentDescription = "Descargar",
-                    modifier = Modifier.size(28.dp),
-                    tint = if (isDownloaded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    if (isDownloading) {
+                        CircularProgressIndicator(
+                            progress = { downloadProgress },
+                            modifier = Modifier.size(28.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            strokeWidth = 3.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = if (isDownloaded) Icons.Rounded.Check else Icons.Rounded.Download,
+                            contentDescription = "Descargar",
+                            modifier = Modifier.size(28.dp),
+                            tint = if (isDownloaded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = if (isDownloaded) "Descargado" else "Descargar",
+                    text = if (isDownloaded) "Descargado" else if (isDownloading) "Descargando" else "Descargar",
                     style = MaterialTheme.typography.labelMedium,
-                    color = if (isDownloaded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    color = if (isDownloaded || isDownloading) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 )
             }
         }

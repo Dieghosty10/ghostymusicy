@@ -81,9 +81,7 @@ fun MainNavGraph(
             )
         }
         composable(Routes.ADMIN) {
-            com.dieghosty10.ghostymusicy.ui.screens.admin.AdminDashboardScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
+            com.dieghosty10.ghostymusicy.ui.screens.AdminScreen(navController = navController)
         }
         composable(Routes.ONBOARDING) {
             com.dieghosty10.ghostymusicy.ui.screens.OnboardingScreen(
@@ -104,7 +102,7 @@ fun MainNavGraph(
             PlayerScreen(navController = navController)
         }
         composable(Routes.SETTINGS) {
-            SettingsScreen()
+            SettingsScreen(navController = navController)
         }
         composable(Routes.LIBRARY) {
             com.dieghosty10.ghostymusicy.ui.screens.LibraryScreen(navController = navController)
