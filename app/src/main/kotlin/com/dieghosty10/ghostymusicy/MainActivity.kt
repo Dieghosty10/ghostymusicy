@@ -29,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.tasks.await
 import com.dieghosty10.ghostymusicy.db.MusicDatabase
 import com.dieghosty10.ghostymusicy.playback.MusicService
 import com.dieghosty10.ghostymusicy.playback.PlayerConnection
@@ -117,8 +118,26 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(Unit) {
                     val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
                     val user = auth.currentUser
-                    val isFirstTimeValue = this@MainActivity.dataStore.getAsync(com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey) ?: true
+                    var isFirstTimeValue = this@MainActivity.dataStore.getAsync(com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey) ?: true
                     
+                    if (user != null && user.isEmailVerified && isFirstTimeValue) {
+                        try {
+                            val doc = com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("users").document(user.uid).get().await()
+                            if (doc.getBoolean("onboardingCompleted") == true) {
+                                isFirstTimeValue = false
+                                com.dieghosty10.ghostymusicy.utils.PreferenceStore.launchEdit(this@MainActivity.dataStore) {
+                                    this[com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey] = false
+                                    val favoriteArtists = doc.get("favoriteArtists") as? List<String>
+                                    if (favoriteArtists != null) {
+                                        this[com.dieghosty10.ghostymusicy.constants.SelectedFavoriteArtistsKey] = favoriteArtists.joinToString(",")
+                                    }
+                                }
+                            }
+                        } catch(e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+
                     startDest = when {
                         user == null -> Routes.LOGIN
                         !user.isEmailVerified -> Routes.VERIFICATION

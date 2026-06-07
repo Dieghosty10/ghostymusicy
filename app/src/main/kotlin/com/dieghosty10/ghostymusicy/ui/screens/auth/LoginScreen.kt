@@ -31,7 +31,7 @@ import android.widget.Toast
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    onNavigateToHome: () -> Unit,
+    onNavigateToHome: (Boolean) -> Unit,
     onNavigateToRegister: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {

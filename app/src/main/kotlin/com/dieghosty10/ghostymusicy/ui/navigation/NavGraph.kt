@@ -42,8 +42,7 @@ fun MainNavGraph(
     ) {
         composable(Routes.LOGIN) {
             com.dieghosty10.ghostymusicy.ui.screens.auth.LoginScreen(
-                onNavigateToHome = {
-                    val isFirstTime = com.dieghosty10.ghostymusicy.utils.PreferenceStore.get(com.dieghosty10.ghostymusicy.constants.IsFirstTimeAppLaunchKey) ?: true
+                onNavigateToHome = { isFirstTime ->
                     val nextRoute = if (isFirstTime) Routes.ONBOARDING else Routes.HOME
                     navController.navigate(nextRoute) {
                         popUpTo(0) { inclusive = true }
@@ -58,6 +57,12 @@ fun MainNavGraph(
             com.dieghosty10.ghostymusicy.ui.screens.auth.RegisterScreen(
                 onNavigateToVerification = {
                     navController.navigate(Routes.VERIFICATION) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateToHome = { isFirstTime ->
+                    val nextRoute = if (isFirstTime) Routes.ONBOARDING else Routes.HOME
+                    navController.navigate(nextRoute) {
                         popUpTo(0) { inclusive = true }
                     }
                 },

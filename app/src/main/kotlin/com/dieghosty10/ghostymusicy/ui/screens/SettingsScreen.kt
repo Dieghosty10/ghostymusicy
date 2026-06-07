@@ -200,7 +200,47 @@ fun SettingsScreen(
             }
         }
 
-        // ── SECCIÓN: ACERCA DE ───────────────────────────────────────────
+        // 🎵 SECCIÓN: CUENTA 🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵
+        item { SettingsSectionHeader("Cuenta") }
+
+        item {
+            val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            SettingsCard {
+                SettingsInfoRow(
+                    icon = Icons.Rounded.Person,
+                    title = "Sesión iniciada como",
+                    subtitle = user?.email ?: "Desconocido"
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            authViewModel.logout()
+                            navController.navigate(Routes.LOGIN) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Logout,
+                        contentDescription = "Cerrar sesión",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    Text(
+                        text = "Cerrar sesión",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        }
+
+        // 🎵 SECCIÓN: ACERCA DE 🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵
         item { SettingsSectionHeader("Acerca de") }
 
         item {

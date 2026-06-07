@@ -100,7 +100,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun login(email: String, pass: String, onSuccess: () -> Unit) {
+    fun login(email: String, pass: String, onSuccess: (Boolean) -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
@@ -115,7 +115,17 @@ class AuthViewModel @Inject constructor(
                         auth.signOut()
                     } else {
                         checkAuthState()
-                        onSuccess()
+                        val onboardingCompleted = doc.getBoolean("onboardingCompleted") ?: false
+                        if (onboardingCompleted) {
+                            PreferenceStore.launchEdit(context.dataStore) {
+                                this[IsFirstTimeAppLaunchKey] = false
+                                val favoriteArtists = doc.get("favoriteArtists") as? List<String>
+                                if (favoriteArtists != null) {
+                                    this[SelectedFavoriteArtistsKey] = favoriteArtists.joinToString(",")
+                                }
+                            }
+                        }
+                        onSuccess(!onboardingCompleted)
                     }
                 } ?: run {
                     _error.value = "No se pudo obtener la información del usuario."
@@ -154,7 +164,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun loginWithGoogle(idToken: String, onSuccess: () -> Unit) {
+    fun loginWithGoogle(idToken: String, onSuccess: (Boolean) -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
@@ -164,6 +174,7 @@ class AuthViewModel @Inject constructor(
                 result.user?.let { user ->
                     // Check if user exists in Firestore
                     val doc = firestore.collection("users").document(user.uid).get().await()
+                    var isFirstTime = true
                     if (!doc.exists()) {
                         // Create profile for new Google user
                         val userData = hashMapOf(
@@ -180,9 +191,20 @@ class AuthViewModel @Inject constructor(
                             auth.signOut()
                             return@launch
                         }
+                        val onboardingCompleted = doc.getBoolean("onboardingCompleted") ?: false
+                        if (onboardingCompleted) {
+                            isFirstTime = false
+                            PreferenceStore.launchEdit(context.dataStore) {
+                                this[IsFirstTimeAppLaunchKey] = false
+                                val favoriteArtists = doc.get("favoriteArtists") as? List<String>
+                                if (favoriteArtists != null) {
+                                    this[SelectedFavoriteArtistsKey] = favoriteArtists.joinToString(",")
+                                }
+                            }
+                        }
                     }
                     checkAuthState()
-                    onSuccess()
+                    onSuccess(isFirstTime)
                 } ?: run {
                     _error.value = "Error al autenticar con Google."
                 }
@@ -203,6 +225,10 @@ class AuthViewModel @Inject constructor(
         userListener = null
         auth.signOut()
         _currentUser.value = null
+        PreferenceStore.launchEdit(context.dataStore) {
+            this[IsFirstTimeAppLaunchKey] = true
+            this[SelectedFavoriteArtistsKey] = ""
+        }
     }
 
     fun clearError() {

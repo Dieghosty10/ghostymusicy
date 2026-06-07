@@ -32,6 +32,7 @@ import android.widget.Toast
 @Composable
 fun RegisterScreen(
     onNavigateToVerification: () -> Unit,
+    onNavigateToHome: (Boolean) -> Unit,
     onNavigateBackToLogin: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
@@ -230,7 +231,7 @@ fun RegisterScreen(
                             val idToken = GoogleAuthHelper.signIn(context)
                             if (idToken != null) {
                                 // For registration, we can just login, the viewmodel will create the user doc if it doesn't exist
-                                viewModel.loginWithGoogle(idToken, onNavigateToVerification)
+                                viewModel.loginWithGoogle(idToken, onNavigateToHome)
                             }
                         } catch (e: Exception) {
                             Toast.makeText(context, e.localizedMessage ?: "Error al registrar con Google", Toast.LENGTH_LONG).show()
