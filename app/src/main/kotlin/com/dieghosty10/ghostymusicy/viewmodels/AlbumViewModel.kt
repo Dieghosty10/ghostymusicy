@@ -39,7 +39,7 @@ class AlbumViewModel @Inject constructor(
     val error: StateFlow<String?> = _error.asStateFlow()
 
     val isSaved: StateFlow<Boolean> = database.album(albumId)
-        .map { it?.bookmarkedAt != null }
+        .map { it?.album?.bookmarkedAt != null }
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
     fun toggleSave() {
