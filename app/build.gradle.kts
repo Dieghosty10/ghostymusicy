@@ -122,8 +122,6 @@ android {
             )
         }
         debug {
-            applicationIdSuffix = ".debug"
-            versionNameSuffix = ".$gitCommit-debug"
             isDebuggable = true
         }
     }

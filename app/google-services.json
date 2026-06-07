@@ -12,7 +12,20 @@
           "package_name": "com.dieghosty10.ghostymusicy"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "876016069673-rh9iebbpmpsed0anf5vlg7sui7ckmvtc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dieghosty10.ghostymusicy",
+            "certificate_hash": "b7d39ef6e6e1b4fac0d2004f434d18de1cc321d8"
+          }
+        },
+        {
+          "client_id": "876016069673-eggvg2f758aahpv22l7o26creqqgbh1b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBY6bzbmtbLyRoahPDUATLlIQrGOnBs5Ug"
@@ -20,26 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:876016069673:android:4a47447428e78286598038",
-        "android_client_info": {
-          "package_name": "com.dieghosty10.ghostymusicy.debug"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBY6bzbmtbLyRoahPDUATLlIQrGOnBs5Ug"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "876016069673-eggvg2f758aahpv22l7o26creqqgbh1b.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
