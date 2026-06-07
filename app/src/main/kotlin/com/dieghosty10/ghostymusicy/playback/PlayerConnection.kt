@@ -25,6 +25,7 @@ import com.dieghosty10.ghostymusicy.extensions.getQueueWindows
 import com.dieghosty10.ghostymusicy.extensions.metadata
 import com.dieghosty10.ghostymusicy.extensions.toMediaItem
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import com.dieghosty10.ghostymusicy.playback.MusicService.MusicBinder
 import com.dieghosty10.ghostymusicy.playback.queues.Queue
 import com.dieghosty10.ghostymusicy.utils.reportException
