@@ -12,6 +12,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 import com.google.gson.GsonBuilder
 import com.dieghosty10.ghostymusicy.utils.YTItemAdapter
@@ -59,6 +60,31 @@ class HomeViewModel @Inject constructor(
             } catch(e: Exception) { e.printStackTrace() }
         }
         fetchHome()
+        rotateHeroArtist()
+    }
+
+    fun rotateHeroArtist() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val favoritesStr = com.dieghosty10.ghostymusicy.utils.PreferenceStore.get(
+                com.dieghosty10.ghostymusicy.constants.SelectedFavoriteArtistsKey
+            )
+            if (!favoritesStr.isNullOrEmpty()) {
+                val favList = favoritesStr.split(",")
+                // Get a random artist different from the current one if possible
+                val currentId = _heroArtist.value?.artist?.id
+                var newId = favList.randomOrNull()
+                if (favList.size > 1 && newId == currentId) {
+                    newId = favList.filter { it != currentId }.randomOrNull()
+                }
+                if (newId != null) {
+                    try {
+                        _heroArtist.value = YouTube.artist(newId).getOrNull()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
     }
 
     private fun isNetworkAvailable(): Boolean {
@@ -100,14 +126,6 @@ class HomeViewModel @Inject constructor(
                 )
                 if (!favoritesStr.isNullOrEmpty()) {
                     val favList = favoritesStr.split(",")
-                    val heroArtistId = favList.randomOrNull()
-                    if (heroArtistId != null) {
-                        try {
-                            _heroArtist.value = YouTube.artist(heroArtistId).getOrNull()
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }
                     val randomFavs = favList.shuffled().take(3) // Tomar 3 artistas al azar
                     val sections = coroutineScope {
                         randomFavs.map { favId ->

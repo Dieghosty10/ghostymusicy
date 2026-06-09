@@ -3349,10 +3349,16 @@ class MusicService :
                  // Check if auto-download on like is enabled and the song is now liked
                  if (dataStore.get(AutoDownloadOnLikeKey, false) && song.liked) {
                      // Trigger download for the liked song
+                     val json = org.json.JSONObject().apply {
+                         put("id", song.id)
+                         put("title", song.title)
+                         put("artists", it.artists.joinToString { artist -> artist.name })
+                         put("thumbnail", song.thumbnailUrl ?: "")
+                     }
                      val downloadRequest = androidx.media3.exoplayer.offline.DownloadRequest
                          .Builder(song.id, song.id.toUri())
                          .setCustomCacheKey(song.id)
-                         .setData(song.title.toByteArray())
+                         .setData(json.toString().toByteArray(Charsets.UTF_8))
                          .build()
                      androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
                          this@MusicService,

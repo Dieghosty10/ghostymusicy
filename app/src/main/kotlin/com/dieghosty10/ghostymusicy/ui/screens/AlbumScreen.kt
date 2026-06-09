@@ -148,11 +148,16 @@ fun AlbumScreen(
 
                                 page.songs.forEach { song ->
                                     val vId = song.id
-                                    val title = song.title
+                                    val json = org.json.JSONObject().apply {
+                                        put("id", vId)
+                                        put("title", song.title)
+                                        put("artists", song.artists.joinToString { it.name })
+                                        put("thumbnail", page.album.thumbnail)
+                                    }
                                     val downloadRequest = androidx.media3.exoplayer.offline.DownloadRequest
                                         .Builder(vId, vId.toUri())
                                         .setCustomCacheKey(vId)
-                                        .setData(title.toByteArray())
+                                        .setData(json.toString().toByteArray(Charsets.UTF_8))
                                         .build()
                                     androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
                                         context,

@@ -262,14 +262,14 @@ fun SearchScreen(
                                 SearchTab.ARTISTS -> ArtistResultRow(item) {
                                     if (item is ArtistItem) navController.navigate(Routes.Artist(item.id))
                                 }
-                                SearchTab.ALBUMS  -> AlbumResultRow(item) {
+                                SearchTab.ALBUMS  -> AlbumResultRow(item, onClick = {
                                     if (item is AlbumItem) navController.navigate(Routes.Album(item.browseId))
-                                }
-                                else              -> SongResultRow(item) {
+                                }, onSave = { viewModel.saveToLibrary(it) })
+                                else              -> SongResultRow(item, onClick = {
                                     if (item is SongItem) {
                                         playerConnection?.playQueue(YouTubeQueue.radio(item.toMediaMetadata()))
                                     }
-                                }
+                                }, onSave = { viewModel.saveToLibrary(it) })
                             }
                         }
                     }
@@ -327,10 +327,11 @@ fun SearchScreen(
 // ── Filas de resultados ────────────────────────────────────────────────────────
 
 @Composable
-fun SongResultRow(item: YTItem, onClick: () -> Unit) {
+fun SongResultRow(item: YTItem, onSave: (YTItem) -> Unit = {}, onClick: () -> Unit) {
     val ia = remember { MutableInteractionSource() }
     val pressed by ia.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.97f else 1f)
+    var saved by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
@@ -364,6 +365,16 @@ fun SongResultRow(item: YTItem, onClick: () -> Unit) {
                 Text(com.dieghosty10.ghostymusicy.utils.makeTimeString(duration.toLong() * 1000L), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+        IconButton(onClick = { 
+            onSave(item)
+            saved = true
+        }) {
+            Icon(
+                if (saved) Icons.Rounded.LibraryAddCheck else Icons.Rounded.LibraryAdd,
+                contentDescription = "Guardar en Biblioteca",
+                tint = if (saved) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
@@ -391,7 +402,9 @@ fun ArtistResultRow(item: YTItem, onClick: () -> Unit = {}) {
 }
 
 @Composable
-fun AlbumResultRow(item: YTItem, onClick: () -> Unit = {}) {
+fun AlbumResultRow(item: YTItem, onSave: (YTItem) -> Unit = {}, onClick: () -> Unit = {}) {
+    var saved by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -416,6 +429,16 @@ fun AlbumResultRow(item: YTItem, onClick: () -> Unit = {}) {
                 )
             }
         }
+        IconButton(onClick = { 
+            onSave(item)
+            saved = true
+        }) {
+            Icon(
+                if (saved) Icons.Rounded.LibraryAddCheck else Icons.Rounded.LibraryAdd,
+                contentDescription = "Guardar en Biblioteca",
+                tint = if (saved) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
@@ -436,7 +459,7 @@ fun SuggestionRow(text: String, onClick: () -> Unit, onFillQuery: () -> Unit) {
 
 // Compatibilidad con HomeScreen
 @Composable
-fun PremiumSearchResultItem(item: YTItem, onClick: () -> Unit) = SongResultRow(item, onClick)
+fun PremiumSearchResultItem(item: YTItem, onClick: () -> Unit) = SongResultRow(item, onClick = onClick)
 
 @Composable
 fun TopArtistResultCard(item: ArtistItem, onClick: () -> Unit) {

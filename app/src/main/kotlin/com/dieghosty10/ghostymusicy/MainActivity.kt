@@ -18,6 +18,8 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -108,9 +110,11 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val navItems = listOf(
-                    NavItem(Routes.HOME,     Icons.Rounded.Home,     "Inicio"),
-                    NavItem(Routes.SEARCH,   Icons.Rounded.Search,   "Buscar"),
-                    NavItem(Routes.SETTINGS, Icons.Rounded.Settings,  "Ajustes"),
+                    NavItem(Routes.HOME,      Icons.Rounded.Home,        "Inicio"),
+                    NavItem(Routes.SEARCH,    Icons.Rounded.Search,      "Buscar"),
+                    NavItem(Routes.LIBRARY,   Icons.Rounded.LibraryMusic,"Biblioteca"),
+                    NavItem(Routes.DOWNLOADS, Icons.Rounded.Download,    "Descargas"),
+                    NavItem(Routes.SETTINGS,  Icons.Rounded.Settings,    "Ajustes"),
                 )
 
                 var startDest by remember { mutableStateOf<String?>(null) }

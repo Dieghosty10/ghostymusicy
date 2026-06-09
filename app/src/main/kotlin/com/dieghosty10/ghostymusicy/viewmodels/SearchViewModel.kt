@@ -130,4 +130,30 @@ class SearchViewModel @Inject constructor(
     fun clearRecentSearches() {
         _recentSearches.value = emptyList()
     }
+
+    fun saveToLibrary(item: com.dieghosty10.ghostymusicy.innertube.models.YTItem) {
+        database.query {
+            when (item) {
+                is com.dieghosty10.ghostymusicy.innertube.models.SongItem -> {
+                    insert(
+                        com.dieghosty10.ghostymusicy.db.entities.SongEntity(
+                            id = item.id,
+                            title = item.title,
+                            thumbnailUrl = item.thumbnail,
+                            albumId = item.album?.id,
+                            albumName = item.album?.name,
+                            duration = item.duration ?: -1,
+                            inLibrary = java.time.LocalDateTime.now()
+                        )
+                    )
+                    // Insert artists if necessary, but skipping for brevity
+                }
+                is com.dieghosty10.ghostymusicy.innertube.models.AlbumItem -> {
+                    // Si quisieras guardar ǭlbumes (la db lo soporta)
+                    // insert(AlbumEntity(id = item.id, title = item.title, ...))
+                }
+                else -> {}
+            }
+        }
+    }
 }

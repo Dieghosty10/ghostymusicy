@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
@@ -57,6 +58,10 @@ fun HomeScreen(
     val newReleases  by viewModel.newReleases.collectAsState()
     val isOffline    by viewModel.isOffline.collectAsState()
     val playerConnection = LocalPlayerConnection.current
+
+    LaunchedEffect(Unit) {
+        viewModel.rotateHeroArtist()
+    }
 
     var showStatsSheet by remember { mutableStateOf(false) }
 
@@ -106,11 +111,8 @@ fun HomeScreen(
                             }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            IconButton(onClick = { navController.navigate(Routes.DOWNLOADS) }) {
-                                Icon(Icons.Rounded.DownloadDone, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            IconButton(onClick = { navController.navigate(Routes.LIBRARY) }) {
-                                Icon(Icons.Rounded.LibraryMusic, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            IconButton(onClick = { navController.navigate(Routes.SEARCH) }) {
+                                Icon(Icons.Rounded.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             IconButton(onClick = { navController.navigate(Routes.SETTINGS) }) {
                                 Icon(Icons.Rounded.Settings, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -161,26 +163,32 @@ fun HomeScreen(
                                 )
                                 Text(
                                     text = heroArtist!!.artist.title,
-                                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.ExtraBold),
+                                    style = MaterialTheme.typography.displaySmall.copy(
+                                        fontWeight = FontWeight.Black,
+                                        letterSpacing = (-1).sp
+                                    ),
                                     color = Color.White
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Button(
+                                Spacer(modifier = Modifier.height(16.dp))
+                                ElevatedButton(
                                     onClick = {
                                         heroArtist!!.artist.radioEndpoint?.let { endpoint ->
-                                            playerConnection?.playQueue(YouTubeQueue(endpoint))
+                                            playerConnection?.playQueue(
+                                                YouTubeQueue(endpoint)
+                                            )
                                         }
                                     },
-                                    colors = ButtonDefaults.buttonColors(
+                                    colors = ButtonDefaults.elevatedButtonColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                                     ),
+                                    elevation = ButtonDefaults.elevatedButtonElevation(defaultElevation = 8.dp, pressedElevation = 4.dp),
                                     shape = RoundedCornerShape(50),
-                                    modifier = Modifier.height(40.dp)
+                                    modifier = Modifier.height(48.dp).fillMaxWidth(0.6f)
                                 ) {
-                                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Reproducir Mix", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(24.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Reproducir Mix", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp))
                                 }
                             }
                         }
@@ -242,17 +250,6 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
                             )
-                            Spacer(Modifier.height(32.dp))
-                            Button(
-                                onClick = { navController.navigate(Routes.DOWNLOADS) },
-                                modifier = Modifier.fillMaxWidth(0.9f).height(56.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                shape = RoundedCornerShape(28.dp)
-                            ) {
-                                Icon(Icons.Rounded.DownloadDone, contentDescription = null, modifier = Modifier.size(24.dp))
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text("Ver Canciones Descargadas", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                            }
                         }
                     }
                 }

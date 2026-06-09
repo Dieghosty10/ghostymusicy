@@ -418,11 +418,16 @@ fun PlayerScreen(navController: androidx.navigation.NavHostController) {
                 val isDownloading = download?.state == Download.STATE_DOWNLOADING
                 IconButton(onClick = {
                     val vId = mediaMetadata?.id ?: return@IconButton
-                    val title = mediaMetadata?.title ?: "Song"
+                    val json = org.json.JSONObject().apply {
+                        put("id", vId)
+                        put("title", mediaMetadata?.title ?: "Desconocido")
+                        put("artists", mediaMetadata?.artists?.joinToString { it.name } ?: "")
+                        put("thumbnail", mediaMetadata?.thumbnailUrl ?: "")
+                    }
                     val downloadRequest = androidx.media3.exoplayer.offline.DownloadRequest
                         .Builder(vId, vId.toUri())
                         .setCustomCacheKey(vId)
-                        .setData(title.toByteArray())
+                        .setData(json.toString().toByteArray(Charsets.UTF_8))
                         .build()
                     androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
                         context,
