@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.dieghosty10.ghostymusicy.LocalPlayerConnection
 import com.dieghosty10.ghostymusicy.R
 import com.dieghosty10.ghostymusicy.constants.CustomThemeColorKey
 import com.dieghosty10.ghostymusicy.constants.DarkModeKey
@@ -48,6 +49,7 @@ fun SettingsScreen(
     var accentNameState by rememberPreference(CustomThemeColorKey, GhostyAccent.BLUE.name)
 
     val userRole by authViewModel.userRole.collectAsState()
+    val playerConnection = LocalPlayerConnection.current
 
     LazyColumn(
         modifier = Modifier
@@ -216,6 +218,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
+                            playerConnection?.player?.pause()
                             authViewModel.logout()
                             navController.navigate(Routes.LOGIN) {
                                 popUpTo(0) { inclusive = true }

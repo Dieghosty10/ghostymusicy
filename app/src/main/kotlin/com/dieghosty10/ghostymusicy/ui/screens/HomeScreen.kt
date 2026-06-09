@@ -172,9 +172,12 @@ fun HomeScreen(
                                 Spacer(modifier = Modifier.height(16.dp))
                                 ElevatedButton(
                                     onClick = {
-                                        heroArtist!!.artist.radioEndpoint?.let { endpoint ->
+                                        val endpoint = heroArtist!!.artist.shuffleEndpoint 
+                                            ?: heroArtist!!.artist.playEndpoint 
+                                            ?: heroArtist!!.artist.radioEndpoint
+                                        endpoint?.let { ep ->
                                             playerConnection?.playQueue(
-                                                YouTubeQueue(endpoint)
+                                                YouTubeQueue(ep)
                                             )
                                         }
                                     },

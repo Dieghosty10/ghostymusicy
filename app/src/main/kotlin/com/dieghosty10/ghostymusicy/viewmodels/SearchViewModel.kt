@@ -18,7 +18,7 @@ import javax.inject.Inject
 enum class SearchTab(val label: String, val filter: YouTube.SearchFilter) {
     SONGS   ("Canciones", YouTube.SearchFilter.FILTER_SONG),
     ARTISTS ("Artistas",  YouTube.SearchFilter.FILTER_ARTIST),
-    ALBUMS  ("Álbumes",   YouTube.SearchFilter.FILTER_ALBUM),
+    ALBUMS  ("Ãlbumes",   YouTube.SearchFilter.FILTER_ALBUM),
     VIDEOS  ("Videos",    YouTube.SearchFilter.FILTER_VIDEO),
 }
 
@@ -44,7 +44,10 @@ class SearchViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    // Historial (en memoria, máximo 10)
+    private val _isLoadingMore = MutableStateFlow(false)
+    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
+
+    // Historial (en memoria, mÃ¡ximo 10)
     private val _recentSearches = MutableStateFlow<List<String>>(emptyList())
     val recentSearches: StateFlow<List<String>> = _recentSearches.asStateFlow()
 
@@ -88,13 +91,13 @@ class SearchViewModel @Inject constructor(
         _error.value = null
         addToHistory(queryText)
 
-        // Cargar el tab activo primero, los demás en paralelo
+        // Cargar el tab activo primero, los demÃ¡s en paralelo
         searchJob = viewModelScope.launch {
             _isLoading.value = true
             // Cargar tab activo
             loadTabSuspend(_activeTab.value, queryText)
             _isLoading.value = false
-            // Cargar los demás tabs en background
+            // Cargar los demÃ¡s tabs en background
             SearchTab.entries.filter { it != _activeTab.value }.forEach { tab ->
                 launch { loadTabSuspend(tab, queryText) }
             }
@@ -113,6 +116,26 @@ class SearchViewModel @Inject constructor(
             val exception = result.exceptionOrNull()
             exception?.printStackTrace()
             _error.value = exception?.message ?: "Error al buscar"
+        }
+    }
+
+    fun loadMore(tab: SearchTab) {
+        if (_isLoadingMore.value) return
+        val currentResult = _results.value[tab] ?: return
+        val continuation = currentResult.continuation ?: return
+
+        viewModelScope.launch {
+            _isLoadingMore.value = true
+            val newResult = YouTube.searchContinuation(continuation)
+            if (newResult.isSuccess) {
+                val nextData = newResult.getOrThrow()
+                val mergedResult = SearchResult(
+                    items = currentResult.items + nextData.items,
+                    continuation = nextData.continuation
+                )
+                _results.value = _results.value + (tab to mergedResult)
+            }
+            _isLoadingMore.value = false
         }
     }
 
@@ -149,10 +172,25 @@ class SearchViewModel @Inject constructor(
                     // Insert artists if necessary, but skipping for brevity
                 }
                 is com.dieghosty10.ghostymusicy.innertube.models.AlbumItem -> {
-                    // Si quisieras guardar ǭlbumes (la db lo soporta)
+                    // Si quisieras guardar Ç­lbumes (la db lo soporta)
                     // insert(AlbumEntity(id = item.id, title = item.title, ...))
                 }
-                else -> {}
+                else -> {
+                    if (item is com.dieghosty10.ghostymusicy.innertube.models.AlbumItem) {
+                        insert(
+                            com.dieghosty10.ghostymusicy.db.entities.AlbumEntity(
+                                id = item.browseId,
+                                playlistId = item.playlistId,
+                                title = item.title,
+                                year = item.year,
+                                thumbnailUrl = item.thumbnail,
+                                songCount = 0,
+                                duration = 0,
+                                inLibrary = java.time.LocalDateTime.now()
+                            )
+                        )
+                    }
+                }
             }
         }
     }

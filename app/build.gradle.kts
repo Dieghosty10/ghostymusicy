@@ -46,8 +46,8 @@ android {
         applicationId = "com.dieghosty10.ghostymusicy"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3008
-        versionName = "3.0.8"
+        versionCode = 3009
+        versionName = "3.0.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

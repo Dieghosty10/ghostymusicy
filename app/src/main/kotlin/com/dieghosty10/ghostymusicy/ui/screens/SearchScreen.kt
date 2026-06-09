@@ -53,7 +53,8 @@ fun SearchScreen(
     val query          by viewModel.query.collectAsState()
     val suggestions    by viewModel.suggestions.collectAsState()
     val results        by viewModel.results.collectAsState()
-    val isLoading      by viewModel.isLoading.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
     val activeTab      by viewModel.activeTab.collectAsState()
     val recentSearches by viewModel.recentSearches.collectAsState()
     val error          by viewModel.error.collectAsState()
@@ -243,7 +244,20 @@ fun SearchScreen(
                         }
                     }
                 } else {
-                    LazyColumn(contentPadding = PaddingValues(bottom = 90.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(), top = 4.dp)) {
+                    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+
+                    LaunchedEffect(listState.layoutInfo.visibleItemsInfo) {
+                        val totalItems = listState.layoutInfo.totalItemsCount
+                        val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                        if (totalItems > 0 && lastVisibleItemIndex >= totalItems - 3 && !isLoadingMore) {
+                            viewModel.loadMore(activeTab)
+                        }
+                    }
+
+                    LazyColumn(
+                        state = listState,
+                        contentPadding = PaddingValues(bottom = 90.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(), top = 4.dp)
+                    ) {
                         val topArtist = currentResults.firstOrNull { it is ArtistItem } as? ArtistItem
                         val showTopArtist = topArtist != null && activeTab != SearchTab.ARTISTS && activeTab != SearchTab.ALBUMS
 
@@ -270,6 +284,17 @@ fun SearchScreen(
                                         playerConnection?.playQueue(YouTubeQueue.radio(item.toMediaMetadata()))
                                     }
                                 }, onSave = { viewModel.saveToLibrary(it) })
+                            }
+                        }
+
+                        if (isLoadingMore) {
+                            item {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                }
                             }
                         }
                     }
