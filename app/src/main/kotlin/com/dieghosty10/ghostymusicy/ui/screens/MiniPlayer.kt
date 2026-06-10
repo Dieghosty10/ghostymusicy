@@ -112,7 +112,8 @@ fun MiniPlayer(
                     onClick = {
                         if (isPlaying) playerConnection.player.pause()
                         else playerConnection.player.play()
-                    }
+                    },
+                    modifier = Modifier.bounceClick()
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
@@ -122,7 +123,8 @@ fun MiniPlayer(
                 }
 
                 IconButton(
-                    onClick = { playerConnection.seekToNext() }
+                    onClick = { playerConnection.seekToNext() },
+                    modifier = Modifier.bounceClick()
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.SkipNext,

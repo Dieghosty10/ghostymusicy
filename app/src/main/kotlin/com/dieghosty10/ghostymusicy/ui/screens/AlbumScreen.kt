@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -113,7 +116,9 @@ fun AlbumScreen(
             }
         } else {
             albumPage?.let { page ->
+                val listState = rememberLazyListState()
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
                         top = padding.calculateTopPadding(),
@@ -123,6 +128,7 @@ fun AlbumScreen(
                     item {
                         AlbumHeader(
                             page = page,
+                            listState = listState,
                             isSaved = isSaved,
                             isDownloaded = isDownloaded,
                             isDownloading = isDownloading,
@@ -239,6 +245,7 @@ fun AlbumScreen(
 @Composable
 fun AlbumHeader(
     page: com.dieghosty10.ghostymusicy.innertube.pages.AlbumPage,
+    listState: LazyListState,
     isSaved: Boolean,
     isDownloaded: Boolean,
     isDownloading: Boolean,
@@ -261,6 +268,7 @@ fun AlbumHeader(
             contentDescription = page.album.title,
             contentScale = ContentScale.Crop,
             modifier = Modifier
+                .graphicsLayer { translationY = if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset * 0.5f else 0f }
                 .size(200.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)

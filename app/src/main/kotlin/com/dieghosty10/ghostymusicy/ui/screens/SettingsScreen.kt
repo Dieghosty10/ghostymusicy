@@ -187,11 +187,21 @@ fun SettingsScreen(
             }
         }
 
-        // ── SECCIÓN: REPRODUCCIÓN ─────────────────────────────────────────
+        // ─── SECCIÓN: REPRODUCCIÓN ────────────────────────────────────────────────────────
         item { SettingsSectionHeader("Reproducción") }
         item {
             var smartRadioState by rememberPreference(com.dieghosty10.ghostymusicy.constants.SmartRadioKey, true)
+            var offlineModeState by rememberPreference(com.dieghosty10.ghostymusicy.constants.OfflineModeKey, false)
+            
             SettingsCard {
+                SettingsSwitchRow(
+                    icon = Icons.Rounded.WifiOff,
+                    title = "Modo Offline",
+                    subtitle = "Ocultar contenido online y mostrar solo lo descargado",
+                    checked = offlineModeState,
+                    onCheckedChange = { offlineModeState = it }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 4.dp))
                 SettingsSwitchRow(
                     icon = Icons.Rounded.Radio,
                     title = "Smart Radio",

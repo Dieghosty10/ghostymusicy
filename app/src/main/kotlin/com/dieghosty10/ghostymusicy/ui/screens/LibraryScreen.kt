@@ -41,12 +41,13 @@ fun LibraryScreen(
 ) {
     val likedSongs by viewModel.likedSongs.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
+    val customPlaylists by viewModel.customPlaylists.collectAsState()
     val likedAlbums by viewModel.likedAlbums.collectAsState()
     val likedArtists by viewModel.likedArtists.collectAsState()
     val playerConnection = LocalPlayerConnection.current
 
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Canciones", "Playlists", "Álbumes")
+    val tabs = listOf("Canciones", "Mis Playlists", "Playlists", "Álbumes")
 
     Scaffold(
         topBar = {
@@ -106,9 +107,20 @@ fun LibraryScreen(
                             }
                         }
                     }
-                    1 -> { // Playlists
+                    1 -> { // Mis Playlists
+                        if (customPlaylists.isEmpty()) {
+                            item { EmptyStateMessage("No tienes playlists personalizadas") }
+                        } else {
+                            items(customPlaylists) { playlist ->
+                                LibraryPlaylistRow(playlist) {
+                                    // TODO: Navigate to playlist
+                                }
+                            }
+                        }
+                    }
+                    2 -> { // Playlists
                         if (playlists.isEmpty()) {
-                            item { EmptyStateMessage("No tienes playlists") }
+                            item { EmptyStateMessage("No tienes playlists guardadas") }
                         } else {
                             items(playlists) { playlist ->
                                 LibraryPlaylistRow(playlist) {
@@ -117,7 +129,7 @@ fun LibraryScreen(
                             }
                         }
                     }
-                    2 -> { // Álbumes
+                    3 -> { // Álbumes
                         if (likedAlbums.isEmpty()) {
                             item { EmptyStateMessage("No hay álbumes guardados") }
                         } else {
@@ -136,6 +148,8 @@ fun LibraryScreen(
 
 @Composable
 fun LibrarySongRow(song: Song, onClick: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -165,6 +179,20 @@ fun LibrarySongRow(song: Song, onClick: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
+        }
+        Box {
+            IconButton(onClick = { expanded = true }) {
+                Icon(Icons.Rounded.MoreVert, contentDescription = "More options")
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                DropdownMenuItem(
+                    text = { Text("Add to Playlist") },
+                    onClick = {
+                        expanded = false
+                        // TODO: Implement add to playlist functionality
+                    }
+                )
+            }
         }
     }
 }

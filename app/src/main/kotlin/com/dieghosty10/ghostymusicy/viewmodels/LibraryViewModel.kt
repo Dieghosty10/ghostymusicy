@@ -24,6 +24,9 @@ class LibraryViewModel @Inject constructor(
     val playlists: StateFlow<List<Playlist>> = database.playlistsBySongCountAsc()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    val customPlaylists: StateFlow<List<Playlist>> = database.getLocalPlaylists()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     val likedAlbums: StateFlow<List<Album>> = database.albumsLikedByLengthAsc()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 

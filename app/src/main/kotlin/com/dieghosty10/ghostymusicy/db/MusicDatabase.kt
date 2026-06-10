@@ -62,7 +62,7 @@ private const val CURRENT_VERSION = 27
 
 class MusicDatabase(
     private val delegate: InternalDatabase,
-) : DatabaseDao by delegate.dao {
+) : DatabaseDao by delegate.dao, PlaylistsDao by delegate.playlistsDao {
     val openHelper: SupportSQLiteOpenHelper
         get() = delegate.openHelper
 
@@ -158,6 +158,7 @@ class MusicDatabase(
 @TypeConverters(Converters::class)
 abstract class InternalDatabase : RoomDatabase() {
     abstract val dao: DatabaseDao
+    abstract val playlistsDao: PlaylistsDao
 
     companion object {
         const val DB_NAME = "song.db"

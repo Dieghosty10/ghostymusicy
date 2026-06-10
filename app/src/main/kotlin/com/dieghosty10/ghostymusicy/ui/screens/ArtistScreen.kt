@@ -5,8 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -87,7 +90,9 @@ fun ArtistScreen(
             }
         } else {
             artistPage?.let { page ->
+                val listState = rememberLazyListState()
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
                         top = padding.calculateTopPadding(),
@@ -97,6 +102,7 @@ fun ArtistScreen(
                     item {
                         ArtistHeader(
                             page = page,
+                            listState = listState,
                             isFollowing = isFollowing,
                             onFollow = { viewModel.toggleFollow() },
                             onRadio = {
@@ -130,7 +136,8 @@ fun ArtistScreen(
                     }
 
                     page.sections.forEach { section ->
-                        if (section.items.isNotEmpty()) {
+                        val firstItem = section.items.firstOrNull()
+                        if (firstItem is SongItem || firstItem is AlbumItem) {
                             item {
                                 Text(
                                     text = section.title,
@@ -233,6 +240,7 @@ fun ArtistScreen(
 @Composable
 fun ArtistHeader(
     page: com.dieghosty10.ghostymusicy.innertube.pages.ArtistPage,
+    listState: LazyListState,
     isFollowing: Boolean,
     onFollow: () -> Unit,
     onRadio: () -> Unit,
@@ -251,6 +259,7 @@ fun ArtistHeader(
             contentDescription = page.artist.title,
             contentScale = ContentScale.Crop,
             modifier = Modifier
+                .graphicsLayer { translationY = if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset * 0.5f else 0f }
                 .size(180.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant)

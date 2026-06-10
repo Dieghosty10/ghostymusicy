@@ -48,6 +48,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.dieghosty10.ghostymusicy.viewmodels.LyricsViewModel
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.ui.composed
+import androidx.compose.ui.input.pointer.pointerInput
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -263,7 +267,7 @@ fun PlayerScreen(navController: androidx.navigation.NavHostController) {
                         playerConnection.toggleLike()
                         isLiked = !isLiked
                     },
-                    modifier = Modifier.size(44.dp)
+                    modifier = Modifier.size(44.dp).bounceClick()
                 ) {
                     Icon(
                         imageVector = if (isLiked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
@@ -334,7 +338,7 @@ fun PlayerScreen(navController: androidx.navigation.NavHostController) {
                 // Anterior
                 IconButton(
                     onClick = { playerConnection.seekToPrevious() },
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier.size(52.dp).bounceClick()
                 ) {
                     Icon(
                         Icons.Rounded.SkipPrevious,
@@ -348,6 +352,7 @@ fun PlayerScreen(navController: androidx.navigation.NavHostController) {
                 Box(
                     modifier = Modifier
                         .size(72.dp)
+                        .bounceClick()
                         .clip(CircleShape)
                         .background(
                             dominantColor?.copy(alpha = 0.9f) ?: MaterialTheme.colorScheme.primary
@@ -369,7 +374,7 @@ fun PlayerScreen(navController: androidx.navigation.NavHostController) {
                 // Siguiente
                 IconButton(
                     onClick = { playerConnection.seekToNext() },
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier.size(52.dp).bounceClick()
                 ) {
                     Icon(
                         Icons.Rounded.SkipNext,
@@ -709,4 +714,28 @@ fun PlayerScreen(navController: androidx.navigation.NavHostController) {
             }
         }
     }
+}
+
+fun Modifier.bounceClick() = composed {
+    var isPressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.85f else 1f,
+        animationSpec = tween(150),
+        label = "bounce"
+    )
+    this
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
+        .pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) {
+                    awaitFirstDown(requireUnconsumed = false)
+                    isPressed = true
+                    waitForUpOrCancellation()
+                    isPressed = false
+                }
+            }
+        }
 }

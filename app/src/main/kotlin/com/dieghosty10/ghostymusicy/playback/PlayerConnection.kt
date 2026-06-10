@@ -59,10 +59,31 @@ class PlayerConnection(
             player.playWhenReady && player.playbackState != STATE_ENDED
         )
     val mediaMetadata = service.currentMediaMetadata
-    val currentSong =
-        mediaMetadata.flatMapLatest {
-            database.song(it?.id)
+    val currentSong = mediaMetadata.flatMapLatest {
+        database.song(it?.id)
+    }
+
+    val sleepTimerMillis = MutableStateFlow<Long?>(null)
+    private var sleepTimerJob: kotlinx.coroutines.Job? = null
+
+    fun startSleepTimer(minutes: Int) {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = scope.launch {
+            val endMillis = System.currentTimeMillis() + minutes * 60 * 1000L
+            while(System.currentTimeMillis() < endMillis) {
+                sleepTimerMillis.value = endMillis - System.currentTimeMillis()
+                kotlinx.coroutines.delay(1000)
+            }
+            sleepTimerMillis.value = null
+            player.pause()
         }
+    }
+
+    fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        sleepTimerMillis.value = null
+    }
+
     val currentLyrics = mediaMetadata.flatMapLatest { mediaMetadata ->
         database.lyrics(mediaMetadata?.id)
     }
