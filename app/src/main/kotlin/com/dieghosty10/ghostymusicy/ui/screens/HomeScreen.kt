@@ -63,8 +63,7 @@ fun HomeScreen(
         viewModel.rotateHeroArtist()
     }
 
-    var showStatsSheet by remember { mutableStateOf(false) }
-
+    
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     val greeting = when (hour) {
         in 5..11  -> "Buenos días"
@@ -94,21 +93,7 @@ fun HomeScreen(
                             Text(greeting,
                                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
                                 color = MaterialTheme.colorScheme.onBackground)
-                            Spacer(Modifier.height(4.dp))
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier.clickable { showStatsSheet = true }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Rounded.Assessment, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                                    Spacer(Modifier.width(6.dp))
-                                    Text("Tus Estadísticas", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                }
-                            }
+                            
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             IconButton(onClick = { navController.navigate(Routes.SEARCH) }) {
@@ -340,15 +325,7 @@ fun HomeScreen(
             }
         }
 
-        if (showStatsSheet) {
-            @OptIn(ExperimentalMaterial3Api::class)
-            ModalBottomSheet(
-                onDismissRequest = { showStatsSheet = false },
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-            ) {
-                StatsSheetContent(recentEvents = recentEvents)
-            }
-        }
+        
     }
 }
 
@@ -613,3 +590,4 @@ fun StatsSheetContent(recentEvents: List<EventWithSong>) {
         }
     }
 }
+

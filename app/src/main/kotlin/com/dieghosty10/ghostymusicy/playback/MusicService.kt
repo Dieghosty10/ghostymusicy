@@ -3645,18 +3645,13 @@ class MusicService :
         reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
         player.repeatMode == REPEAT_MODE_OFF
     ) {
-        val isNearEndWithoutPaging =
-            player.mediaItemCount - player.currentMediaItemIndex <= 3 && !currentQueue.hasNextPage()
+        val force =
+            reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK ||
+                reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED
 
-        if (!isNearEndWithoutPaging) {
-            val force =
-                reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK ||
-                    reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED
-
-            val currentId = (mediaItem?.metadata ?: player.currentMetadata)?.id?.trim().orEmpty()
-            if (force || (currentId.isNotBlank() && automixSeedMediaId != currentId)) {
-                refreshAutomixForCurrentMedia(force = force)
-            }
+        val currentId = (mediaItem?.metadata ?: player.currentMetadata)?.id?.trim().orEmpty()
+        if (force || (currentId.isNotBlank() && automixSeedMediaId != currentId)) {
+            refreshAutomixForCurrentMedia(force = force)
         }
     }
 

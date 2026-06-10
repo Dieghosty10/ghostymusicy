@@ -171,27 +171,9 @@ class SearchViewModel @Inject constructor(
                     )
                     // Insert artists if necessary, but skipping for brevity
                 }
-                is com.dieghosty10.ghostymusicy.innertube.models.AlbumItem -> {
-                    // Si quisieras guardar Ç­lbumes (la db lo soporta)
-                    // insert(AlbumEntity(id = item.id, title = item.title, ...))
-                }
-                else -> {
-                    if (item is com.dieghosty10.ghostymusicy.innertube.models.AlbumItem) {
-                        insert(
-                            com.dieghosty10.ghostymusicy.db.entities.AlbumEntity(
-                                id = item.browseId,
-                                playlistId = item.playlistId,
-                                title = item.title,
-                                year = item.year,
-                                thumbnailUrl = item.thumbnail,
-                                songCount = 0,
-                                duration = 0,
-                                inLibrary = java.time.LocalDateTime.now()
-                            )
-                        )
-                    }
+                is com.dieghosty10.ghostymusicy.innertube.models.AlbumItem -> { insert(com.dieghosty10.ghostymusicy.db.entities.AlbumEntity(id = item.browseId, playlistId = item.playlistId, title = item.title, year = item.year, thumbnailUrl = item.thumbnail, songCount = 0, duration = 0, inLibrary = java.time.LocalDateTime.now())) } else -> { }
                 }
             }
         }
     }
-}
+
