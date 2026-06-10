@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GhostyMusicY - La mejor experiencia musical</title>
-    <meta name="description" content="Descarga GhostyMusicY, la aplicación de música con diseño premium, modo offline, y letras sincronizadas totalmente gratis." />
+    <title>GhostyMusicY - La música sin interrupciones</title>
+    <meta name="description" content="Descarga GhostyMusicY, tu nueva experiencia musical definitiva. Diseño premium, offline total y conexión perfecta." />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -13,21 +13,17 @@
 <body>
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
 
     <nav class="navbar glass">
         <div class="nav-container">
             <div class="logo">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20C7.58 20 4 16.42 4 12C4 7.58 7.58 4 12 4Z" fill="white" fill-opacity="0.2"/>
-                    <path d="M12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C12 20 15 16 15 12C15 8 12 4 12 4Z" fill="white"/>
-                    <circle cx="10" cy="10" r="1.5" fill="#0A0A0A"/>
-                    <circle cx="14" cy="10" r="1.5" fill="#0A0A0A"/>
-                </svg>
+                <img src="/logo_ghosty.png" alt="Ghosty Logo" class="brand-logo" />
                 <span>GhostyMusicY</span>
             </div>
             <div class="nav-links">
-                <a href="#features">Características</a>
-                <a href="#download" class="btn-primary-small">Descargar APK</a>
+                <a href="#experiencia">Experiencia</a>
+                <a href="#download" class="btn-primary-small">Descarga Directa</a>
             </div>
         </div>
     </nav>
@@ -35,18 +31,17 @@
     <main>
         <section class="hero">
             <div class="hero-content reveal">
-                <div class="badge">NUEVA VERSIÓN 3.2.0</div>
-                <h1 class="hero-title">La música que amas, <br> <span class="gradient-text">sin ataduras.</span></h1>
-                <p class="hero-subtitle">Experimenta la evolución del streaming con diseño premium, modo offline absoluto y letras sincronizadas estilo karaoke.</p>
+                <div class="badge">NUEVA EXPERIENCIA</div>
+                <h1 class="hero-title">La música que amas, <br> <span class="gradient-text">sin interrupciones.</span></h1>
+                <p class="hero-subtitle">Tu biblioteca, tus reglas. Hemos diseñado GhostyMusicY para que la tecnología desaparezca y solo quede lo más importante: la conexión profunda con cada melodía.</p>
                 <div class="hero-cta">
-                    <a href="https://github.com/Dieghosty10/ghostymusicy/releases" class="btn-primary" target="_blank">
+                    <a href="/GhostyMusicY.apk" class="btn-primary" download>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        Descargar Gratis
+                        Descarga Directa
                     </a>
-                    <a href="https://github.com/Dieghosty10/ghostymusicy" class="btn-secondary" target="_blank">Ver en GitHub</a>
                 </div>
             </div>
-            <div class="hero-visual reveal reveal-delay">
+            <div class="hero-visual reveal reveal-delay" data-tilt data-tilt-max="10" data-tilt-speed="400" data-tilt-perspective="1000">
                 <div class="mockup-container">
                     <img src="/mockup.png" alt="GhostyMusicY App Mockup" class="mockup-img" />
                     <div class="mockup-glow"></div>
@@ -54,41 +49,46 @@
             </div>
         </section>
 
-        <section id="features" class="bento-section">
+        <section id="experiencia" class="showcase-section">
             <div class="section-header reveal">
-                <h2>Diseñado para <span class="text-white">destacar.</span></h2>
-                <p>Una interfaz de cristal esmerilado que cobra vida con cada canción.</p>
+                <h2>El arte de <span class="text-white">escuchar.</span></h2>
             </div>
             
-            <div class="bento-grid">
-                <div class="bento-card bento-large glass reveal">
-                    <div class="card-icon">🔋</div>
-                    <h3>Modo Estrictamente Offline</h3>
-                    <p>Activa el switch de ahorro total de datos. GhostyMusicY ocultará todo el contenido online y transformará tu aplicación en un elegante reproductor de biblioteca local.</p>
+            <div class="showcase-grid">
+                <!-- Tarjeta Interactiva 1: Reproductor -->
+                <div class="showcase-card glass reveal" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
+                    <div class="card-content">
+                        <h3>Inmersión Total</h3>
+                        <p>Cada vez que reproduces una canción, la interfaz se adapta fluidamente creando un efecto Parallax profundo que cobra vida en tus manos.</p>
+                    </div>
+                    <div class="card-visual">
+                        <img src="/player_preview.png" alt="Reproductor Preview" class="app-screenshot" />
+                    </div>
                 </div>
-                <div class="bento-card glass reveal reveal-delay">
-                    <div class="card-icon">🎙️</div>
-                    <h3>Modo Karaoke</h3>
-                    <p>Canta tus canciones favoritas con letras sincronizadas en tiempo real directamente en tu reproductor.</p>
+
+                <!-- Tarjeta Interactiva 2: Offline -->
+                <div class="showcase-card glass reveal reveal-delay" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
+                    <div class="card-content">
+                        <h3>Desconexión Absoluta</h3>
+                        <p>Convierte tu dispositivo en una fortaleza musical. Activa el Modo Offline y disfruta de un ecosistema que funciona sin depender de conexiones externas.</p>
+                    </div>
                 </div>
-                <div class="bento-card glass reveal reveal-delay-2">
-                    <div class="card-icon">🧠</div>
-                    <h3>Smart Automix</h3>
-                    <p>La música nunca se detiene. Nuestra radio inteligente añade recomendaciones automáticas cuando tu lista está por terminar.</p>
-                </div>
-                <div class="bento-card bento-wide glass reveal">
-                    <div class="card-icon">✨</div>
-                    <h3>UI Dinámica & Parallax</h3>
-                    <p>Efectos 3D inmersivos en las portadas de los álbumes al hacer scroll, rebotes sutiles en los botones y una paleta monocromática que resalta lo más importante: la música.</p>
+                
+                <!-- Tarjeta Interactiva 3: Playlists -->
+                <div class="showcase-card showcase-wide glass reveal" data-tilt data-tilt-max="2" data-tilt-glare data-tilt-max-glare="0.1">
+                    <div class="card-content">
+                        <h3>Tu biblioteca, tu esencia</h3>
+                        <p>Agrupa tus emociones en Playlists Nativas. Una base de datos ultrarrápida diseñada exclusivamente para organizar tu banda sonora personal de forma intuitiva e instantánea.</p>
+                    </div>
                 </div>
             </div>
         </section>
 
         <section id="download" class="download-section reveal">
-            <div class="download-container glass">
-                <h2>Únete a la nueva era.</h2>
-                <p>Descarga el archivo APK directamente desde nuestro repositorio oficial y disfruta de música ilimitada sin anuncios.</p>
-                <a href="https://github.com/Dieghosty10/ghostymusicy/releases" class="btn-primary btn-large" target="_blank">Obtener GhostyMusicY v3.2.0</a>
+            <div class="download-container glass" data-tilt data-tilt-max="2" data-tilt-glare data-tilt-max-glare="0.1">
+                <h2>Siente la diferencia hoy.</h2>
+                <p>Descarga la última versión de manera directa y comienza a escuchar tu música con la calidad que mereces. Libre y sin ataduras.</p>
+                <a href="/GhostyMusicY.apk" class="btn-primary btn-large" download>Descargar APK Seguro</a>
             </div>
         </section>
     </main>
@@ -96,12 +96,15 @@
     <footer>
         <div class="footer-content">
             <div class="footer-logo">
+                <img src="/logo_ghosty.png" alt="Ghosty Logo" class="brand-logo-small" />
                 <span>GhostyMusicY</span>
-                <p>© 2026 Dieghosty10. Proyecto de código abierto.</p>
             </div>
+            <p>Diseñado con pasión. © 2026 Dieghosty10.</p>
         </div>
     </footer>
 
+    <!-- Vanilla Tilt JS CDN para interactividad premium -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
     <script type="module" src="./main.js"></script>
 </body>
 </html>
